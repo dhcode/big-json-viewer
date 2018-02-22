@@ -1,0 +1,30 @@
+{
+  "name": "big-json-viewer",
+  "version": "0.0.1",
+  "description": "JavaScript Library to view big JSON structures.",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tslint -c tslint.json -p tsconfig.json",
+    "karma": "karma start"
+  },
+  "keywords": [
+    "JSON",
+    "JavaScript",
+    "TypeScript",
+    "big",
+    "JSON"
+  ],
+  "author": "Dominik Herbst",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jasmine": "^2.8.6",
+    "jasmine-core": "^2.99.1",
+    "karma": "^2.0.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-jasmine": "^1.1.1",
+    "karma-typescript": "^3.0.12",
+    "tslint": "^5.9.1",
+    "typescript": "^2.7.2"
+  }
+}
