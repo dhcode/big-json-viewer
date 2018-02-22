@@ -1,4 +1,4 @@
-import {JsonNodeInfo, JsonParser, NodeType} from './json-parser';
+import {JsonNodeInfo, JsonParser} from './json-parser';
 
 describe('JSON Parser', function () {
 
@@ -15,7 +15,6 @@ describe('JSON Parser', function () {
         expect(info.length).toEqual(0);
         expect(info.chars).toEqual(2);
         expect(info.path.length).toEqual(0);
-        expect(info.getValue()).toBeUndefined();
 
         const keys = info.getObjectKeys();
         expect(keys).toBeTruthy();
@@ -160,6 +159,10 @@ describe('JSON Parser', function () {
         expect(node.chars).toEqual(2);
         expect(node.path.length).toEqual(1);
         expect(node.path[0]).toEqual('key2');
+
+        node = info.getByKey('key1');
+        expectStringNode(node, 'value1', 8, ['key1']);
+
     });
 
     it('should handle empty array', function () {
@@ -169,7 +172,6 @@ describe('JSON Parser', function () {
         expect(info.length).toEqual(0);
         expect(info.chars).toEqual(2);
         expect(info.path.length).toEqual(0);
-        expect(info.getValue()).toBeUndefined();
 
         const nodes = info.getArrayNodes();
         expect(nodes.length).toEqual(0);
@@ -182,7 +184,6 @@ describe('JSON Parser', function () {
         expect(info.length).toEqual(2);
         expect(info.chars).toEqual(9);
         expect(info.path.length).toEqual(0);
-        expect(info.getValue()).toBeUndefined();
 
         const nodes = info.getArrayNodes();
         expect(nodes.length).toEqual(2);
@@ -199,7 +200,6 @@ describe('JSON Parser', function () {
         expect(info.length).toEqual(3);
         expect(info.chars).toEqual(19);
         expect(info.path.length).toEqual(0);
-        expect(info.getValue()).toBeUndefined();
 
         const nodes = info.getArrayNodes();
         expect(nodes.length).toEqual(3);
@@ -267,26 +267,29 @@ describe('JSON Parser', function () {
         expectStringNode(nodes[keys[0]], 'C', 3, ['c']);
         expectStringNode(nodes[keys[1]], 'D', 3, ['d']);
 
+        const node = info.getByIndex(1);
+        expectStringNode(node, 'B', 3, ['b']);
+
     });
 
     it('should handle nested objects', function () {
-        const instance = new JsonParser('{"a": {"b": {"c": true}}}');
+        const instance = new JsonParser('{"a": {"b": {"c": true, "d": "D"}}}');
         const info = instance.getRootNodeInfo();
         expect(info.type).toEqual('object');
         expect(info.length).toEqual(1);
-        expect(info.chars).toEqual(25);
+        expect(info.chars).toEqual(35);
 
         let nodes = info.getObjectNodes();
         expect(nodes.a.type).toEqual('object');
         expect(nodes.a.length).toEqual(1);
-        expect(nodes.a.chars).toEqual(18);
+        expect(nodes.a.chars).toEqual(28);
         expect(nodes.a.path.length).toEqual(1);
         expect(nodes.a.path[0]).toEqual('a');
 
         nodes = nodes.a.getObjectNodes();
         expect(nodes.b.type).toEqual('object');
-        expect(nodes.b.length).toEqual(1);
-        expect(nodes.b.chars).toEqual(11);
+        expect(nodes.b.length).toEqual(2);
+        expect(nodes.b.chars).toEqual(21);
         expect(nodes.b.path.length).toEqual(2);
         expect(nodes.b.path[0]).toEqual('a');
         expect(nodes.b.path[1]).toEqual('b');
@@ -300,7 +303,28 @@ describe('JSON Parser', function () {
         expect(nodes.c.path[2]).toEqual('c');
         expect(nodes.c.getValue()).toEqual(true);
 
+        const node = info.getByPath('a.b.d'.split('.'));
+        expectStringNode(node, 'D', 3, ['a', 'b', 'd']);
 
+        expect(info.getByPath('a.b.e'.split('.'))).toBeUndefined();
+        expect(info.getByPath([])).toBeUndefined();
+
+
+    });
+
+    it('should throw on incomplete object', function () {
+        const instance = new JsonParser('{');
+        expect(() => instance.getRootNodeInfo()).toThrowError('parse object incomplete at end');
+    });
+
+    it('should throw on incomplete array', function () {
+        const instance = new JsonParser('{"d": ["sd",}');
+        expect(() => instance.getRootNodeInfo()).toThrowError('parse value unknown token } at 12');
+    });
+
+    it('should throw on incomplete string', function () {
+        const instance = new JsonParser('"abc');
+        expect(() => instance.getRootNodeInfo()).toThrowError('parse string incomplete at end');
     });
 
 });

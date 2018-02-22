@@ -35,12 +35,12 @@ function bufToString(buf: number | number[] | Uint16Array) {
 
 
 export type NodeType = 'string' | 'number' | 'array' | 'object' | 'boolean' | 'null';
-const valueTypes = ['string', 'number', 'boolean', 'null'];
 
 export interface ParseContext {
     path: string[];
     start?: number;
     limit?: number;
+    objectKey?: string;
     objectKeys?: string[]; // truthy if keys should be resolved
     objectNodes?: { [key: string]: JsonNodeInfo }; // truthy if nodes should be resolved
     arrayNodes?: JsonNodeInfo[]; // truthy if nodes should be resolved
@@ -62,7 +62,11 @@ export class JsonNodeInfo {
         this.path = path;
     }
 
-    // in case of an object
+    /**
+     * Returns the list of keys in case of an object for the defined range
+     * @param {number} start
+     * @param {number} limit
+     */
     public getObjectKeys(start = 0, limit?: number): string[] {
         if (this.type !== 'object') {
             throw new Error(`Unsupported method on non-object ${this.type}`);
@@ -78,7 +82,71 @@ export class JsonNodeInfo {
         return ctx.objectKeys;
     }
 
-    // in case of an object
+    /**
+     * Return the NodeInfo at the defined position.
+     * Use the index from getObjectKeys
+     * @param index
+     */
+    public getByIndex(index: number): JsonNodeInfo {
+        if (this.type === 'object') {
+            const nodes = this.getObjectNodes(index, 1);
+            const keys = Object.keys(nodes);
+            if (keys.length) {
+                return nodes[keys[0]];
+            }
+        }
+        if (this.type === 'array') {
+            const nodes = this.getArrayNodes(index, 1);
+            if (nodes.length) {
+                return nodes[0];
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Return the NodeInfo for the specified key
+     * Use the index from getObjectKeys
+     * @param key
+     */
+    public getByKey(key: string): JsonNodeInfo {
+        if (this.type === 'object') {
+            const ctx: ParseContext = {
+                path: this.path,
+                objectKey: key,
+            };
+            this.parser.parseObject(this.index, ctx);
+            return ctx.objectNodes ? ctx.objectNodes[key] : undefined;
+        }
+        if (this.type === 'array') {
+            return this.getByIndex(parseInt(key));
+        }
+        return undefined;
+    }
+
+    /**
+     * Find the information for a given path
+     * @param {string[]} path
+     * @returns {JsonNodeInfo}
+     */
+    public getByPath(path: string[]): JsonNodeInfo {
+        if (!path || !path.length) {
+            return undefined;
+        }
+        const p = path.slice();
+        let key: string;
+        let node: JsonNodeInfo = this;
+        while ((key = p.shift()) !== undefined && node) {
+            node = node.getByKey(key);
+        }
+        return node;
+    }
+
+    /**
+     * Returns a map with the NodeInfo objects for the defined range
+     * @param {number} start
+     * @param {number} limit
+     */
     public getObjectNodes(start = 0, limit?: number): { [key: string]: JsonNodeInfo } {
         if (this.type !== 'object') {
             throw new Error(`Unsupported method on non-object ${this.type}`);
@@ -94,7 +162,11 @@ export class JsonNodeInfo {
         return ctx.objectNodes;
     }
 
-    // in case of an array
+    /**
+     * Returns a list of NodeInfo for the defined range
+     * @param {number} start
+     * @param {number} limit
+     */
     public getArrayNodes(start = 0, limit?: number): JsonNodeInfo[] {
         if (this.type !== 'array') {
             throw new Error(`Unsupported method on non-array ${this.type}`);
@@ -110,17 +182,11 @@ export class JsonNodeInfo {
         return ctx.arrayNodes;
     }
 
-    // in case of string, number, boolean
-    public getValue(): string | number | boolean | null {
-        if (valueTypes.indexOf(this.type) === -1) {
-            return undefined;
-        }
-        const ctx: ParseContext = {
-            path: this.path,
-            value: null
-        };
-        this.parser.parseValue(this.index, ctx);
-        return ctx.value;
+    /**
+     * Get the natively parsed value
+     */
+    public getValue(): any {
+        return this.parser.parseNative(this.index, this.index + this.chars);
     }
 }
 
@@ -150,14 +216,14 @@ export class JsonParser {
             nodeInfo: new JsonNodeInfo(this, start, [])
         };
 
-        const end = this.parseValue(start, ctx);
+        const end = this.parseValue(start, ctx, false);
         if (start === end) {
             return null;
         }
         return ctx.nodeInfo;
     }
 
-    parseValue(start: number, ctx?: ParseContext): number {
+    parseValue(start: number, ctx?: ParseContext, throwUnknown = true): number {
         const char = this.data[start];
         if (isString(char)) {
             return this.parseString(start, ctx);
@@ -181,6 +247,10 @@ export class JsonParser {
             return this.parseToken(start, NULL, ctx);
         }
 
+        if (throwUnknown) {
+            throw new Error(`parse value unknown token ${bufToString(char)} at ${start}`);
+        }
+
         function isString(char) {
             return char === DOUBLE_QUOTE || char === SINGLE_QUOTE;
         }
@@ -198,7 +268,10 @@ export class JsonParser {
         const keys = [];
         const dataMap = {};
 
-        while (index < this.data.length) {
+        while (index <= this.data.length) {
+            if (index === this.data.length) {
+                throw new Error(`parse object incomplete at end`);
+            }
             index = this.skipIgnored(index);
             if (this.data[index] === BRACE_END) {
                 index++;
@@ -221,7 +294,7 @@ export class JsonParser {
             index = this.skipIgnored(index);
 
             let valueCtx: ParseContext = null;
-            if (keyCtx && ctx && ctx.objectNodes) {
+            if (keyCtx && ctx && (ctx.objectNodes || keyCtx.value === ctx.objectKey)) {
                 valueCtx = {
                     path: ctx.path,
                     nodeInfo: new JsonNodeInfo(this, index, [...ctx.path, keyCtx.value as string])
@@ -231,8 +304,12 @@ export class JsonParser {
             index = this.parseValue(index, valueCtx);
             index = this.skipIgnored(index);
 
-            if (valueCtx) {
+            if (valueCtx && ctx.objectNodes) {
                 dataMap[keyCtx.value as string] = valueCtx.nodeInfo;
+            } else if (valueCtx && ctx.objectKey !== undefined) {
+                ctx.objectNodes = {};
+                ctx.objectNodes[ctx.objectKey] = valueCtx.nodeInfo;
+                return;
             }
 
             length++;
@@ -260,7 +337,7 @@ export class JsonParser {
             if (!ctx || ctx.start && keyIndex < ctx.start || ctx.limit && keyIndex >= ctx.start + ctx.limit) {
                 return null;
             }
-            if (ctx && (ctx.objectKeys || ctx.objectNodes)) {
+            if (ctx && (ctx.objectKeys || ctx.objectNodes || ctx.objectKey !== undefined)) {
                 return {
                     path: ctx.path,
                     value: null
@@ -275,7 +352,10 @@ export class JsonParser {
     parseArray(start: number, ctx?: ParseContext): number {
         let index = start + 1; // skip the start bracket
         let length = 0;
-        while (index < this.data.length) {
+        while (index <= this.data.length) {
+            if (index === this.data.length) {
+                throw new Error(`parse array incomplete at end`);
+            }
             index = this.skipIgnored(index);
             if (this.data[index] === BRACKET_END) {
                 index++;
@@ -324,7 +404,10 @@ export class JsonParser {
         let index = start;
         const expect = this.data[index] === DOUBLE_QUOTE ? DOUBLE_QUOTE : SINGLE_QUOTE;
         let esc = false, length = 0;
-        for (index++; index < this.data.length; index++) {
+        for (index++; index <= this.data.length; index++) {
+            if (index === this.data.length) {
+                throw new Error(`parse string incomplete at end`);
+            }
             if (!esc && this.data[index] === expect) {
                 index++;
                 break;
@@ -376,7 +459,7 @@ export class JsonParser {
         return i;
     }
 
-    parseDigits(start: number): number {
+    private parseDigits(start: number): number {
         for (; DIGIT.indexOf(this.data[start]) !== -1; start++) {
 
         }
@@ -406,7 +489,11 @@ export class JsonParser {
         return index;
     }
 
-    skipIgnored(start: number) {
+    parseNative(start, end) {
+        return JSON.parse(bufToString(this.data.subarray(start, end)));
+    }
+
+    private skipIgnored(start: number) {
         for (let i = start; i < this.data.length; i++) {
             if (IGNORED.indexOf(this.data[i]) !== -1) {
                 continue;
