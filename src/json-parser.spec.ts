@@ -22,7 +22,7 @@ describe('JSON Parser', function () {
 
     const nodes = info.getObjectNodes();
     expect(nodes).toBeTruthy();
-    expect(Object.keys(nodes).length).toEqual(0);
+    expect(nodes.length).toEqual(0);
   });
 
   it('should handle empty string', function () {
@@ -124,10 +124,8 @@ describe('JSON Parser', function () {
 
     const nodes = info.getObjectNodes();
     expect(nodes).toBeTruthy();
-    const nodeKeys = Object.keys(nodes);
-    expect(nodeKeys.length).toEqual(1);
-    const node = nodes[nodeKeys[0]];
-    expectStringNode(node, 'value1', 8, ['key1']);
+    expect(nodes.length).toEqual(1);
+    expectStringNode(nodes[0], 'value1', 8, ['key1']);
 
   });
 
@@ -147,13 +145,12 @@ describe('JSON Parser', function () {
 
     const nodes = info.getObjectNodes();
     expect(nodes).toBeTruthy();
-    const nodeKeys = Object.keys(nodes);
-    expect(nodeKeys.length).toEqual(2);
+    expect(nodes.length).toEqual(2);
 
-    let node = nodes[nodeKeys[0]];
-    expectStringNode(node, 'value1', 8, ['key1']);
+    let node = nodes[0];
+    expectStringNode(nodes[0], 'value1', 8, ['key1']);
 
-    node = nodes[nodeKeys[1]];
+    node = nodes[1];
     expect(node.type).toEqual('array');
     expect(node.length).toEqual(0);
     expect(node.chars).toEqual(2);
@@ -262,10 +259,9 @@ describe('JSON Parser', function () {
     expect(keys[0]).toEqual('d');
 
     const nodes = info.getObjectNodes(2, 5);
-    keys = Object.keys(nodes);
-    expect(keys.length).toEqual(2);
-    expectStringNode(nodes[keys[0]], 'C', 3, ['c']);
-    expectStringNode(nodes[keys[1]], 'D', 3, ['d']);
+    expect(nodes.length).toEqual(2);
+    expectStringNode(nodes[0], 'C', 3, ['c']);
+    expectStringNode(nodes[1], 'D', 3, ['d']);
 
     const node = info.getByIndex(1);
     expectStringNode(node, 'B', 3, ['b']);
@@ -280,30 +276,33 @@ describe('JSON Parser', function () {
     expect(info.chars).toEqual(35);
 
     let nodes = info.getObjectNodes();
-    expect(nodes.a.type).toEqual('object');
-    expect(nodes.a.length).toEqual(1);
-    expect(nodes.a.chars).toEqual(28);
-    expect(nodes.a.path.length).toEqual(1);
-    expect(nodes.a.path[0]).toEqual('a');
+    let node = nodes[0];
+    expect(node.type).toEqual('object');
+    expect(node.length).toEqual(1);
+    expect(node.chars).toEqual(28);
+    expect(node.path.length).toEqual(1);
+    expect(node.path[0]).toEqual('a');
 
-    nodes = nodes.a.getObjectNodes();
-    expect(nodes.b.type).toEqual('object');
-    expect(nodes.b.length).toEqual(2);
-    expect(nodes.b.chars).toEqual(21);
-    expect(nodes.b.path.length).toEqual(2);
-    expect(nodes.b.path[0]).toEqual('a');
-    expect(nodes.b.path[1]).toEqual('b');
+    nodes = node.getObjectNodes();
+    node = nodes[0];
+    expect(node.type).toEqual('object');
+    expect(node.length).toEqual(2);
+    expect(node.chars).toEqual(21);
+    expect(node.path.length).toEqual(2);
+    expect(node.path[0]).toEqual('a');
+    expect(node.path[1]).toEqual('b');
 
-    nodes = nodes.b.getObjectNodes();
-    expect(nodes.c.type).toEqual('boolean');
-    expect(nodes.c.chars).toEqual(4);
-    expect(nodes.c.path.length).toEqual(3);
-    expect(nodes.c.path[0]).toEqual('a');
-    expect(nodes.c.path[1]).toEqual('b');
-    expect(nodes.c.path[2]).toEqual('c');
-    expect(nodes.c.getValue()).toEqual(true);
+    nodes = node.getObjectNodes();
+    node = nodes[0];
+    expect(node.type).toEqual('boolean');
+    expect(node.chars).toEqual(4);
+    expect(node.path.length).toEqual(3);
+    expect(node.path[0]).toEqual('a');
+    expect(node.path[1]).toEqual('b');
+    expect(node.path[2]).toEqual('c');
+    expect(node.getValue()).toEqual(true);
 
-    const node = info.getByPath('a.b.d'.split('.'));
+    node = info.getByPath('a.b.d'.split('.'));
     expectStringNode(node, 'D', 3, ['a', 'b', 'd']);
 
     expect(info.getByPath('a.b.e'.split('.'))).toBeUndefined();

@@ -10,6 +10,28 @@ export interface NodeElement extends HTMLDivElement {
   toggleNode();
 }
 
+export interface BigJsonViewerOptions {
+  /**
+   * How many nodes to show under an object at once
+   * before pagination starts
+   * @default 50
+   */
+  objectNodesLimit?: number;
+
+  /**
+   * How many nodes to show under an array at once
+   * before pagination starts
+   * @default 50
+   */
+  arrayNodesLimit?: number;
+
+  /**
+   * Whether the label before an item should show the whole path.
+   * @default false
+   */
+  labelAsPath?: boolean;
+}
+
 /**
  * Creates the DOM nodes and interactivity to watch large JSON structures.
  */
@@ -17,8 +39,17 @@ export class BigJsonViewer {
 
   parser: JsonParser;
 
-  constructor(data: ArrayBuffer | string) {
+  options: BigJsonViewerOptions = {
+    objectNodesLimit: 50,
+    arrayNodesLimit: 50,
+    labelAsPath: false
+  };
+
+  constructor(data: ArrayBuffer | string, options?: BigJsonViewerOptions) {
     this.parser = new JsonParser(data);
+    if (options) {
+      Object.assign(this.options, options);
+    }
   }
 
   getRootFragment(): DocumentFragment {
@@ -46,7 +77,7 @@ export class BigJsonViewer {
     return element;
   }
 
-  attachInteractivity(nodeElement: NodeElement, node: JsonNodeInfo) {
+  private attachInteractivity(nodeElement: NodeElement, node: JsonNodeInfo) {
     nodeElement.isNodeOpen = () => {
       return nodeElement.classList.contains('json-node-open');
     };
@@ -65,7 +96,7 @@ export class BigJsonViewer {
     };
   }
 
-  attachClickToggleListener(anchor: HTMLAnchorElement) {
+  private attachClickToggleListener(anchor: HTMLAnchorElement) {
     anchor.addEventListener('click', e => {
       e.preventDefault();
       const nodeElement = this.findNodeElement(anchor);
@@ -75,7 +106,7 @@ export class BigJsonViewer {
     });
   }
 
-  closeNode(parent: NodeElement) {
+  private closeNode(parent: NodeElement) {
     if (!parent.isNodeOpen()) {
       return;
     }
@@ -87,45 +118,117 @@ export class BigJsonViewer {
     }
   }
 
-  openNode(parent: NodeElement, node: JsonNodeInfo) {
+  private openNode(parent: NodeElement, node: JsonNodeInfo) {
     if (parent.isNodeOpen()) {
       return;
     }
     parent.classList.add('json-node-open');
 
+    parent.parentElement.appendChild(this.getPaginatedNodeChildren(node));
+
+  }
+
+  private getPaginatedNodeChildren(node: JsonNodeInfo): HTMLElement {
     const element = document.createElement('div');
     element.classList.add('json-node-children');
 
     if (node.type === 'object') {
-      const nodes = node.getObjectNodes(0, 100);
-      Object.keys(nodes).forEach(key => {
-        element.appendChild(this.getNodeElement(nodes[key]));
-      });
-      // TODO pagination
+      this.generatePaginatedNodes(element, node, this.options.objectNodesLimit);
     }
     if (node.type === 'array') {
-      const nodes = node.getArrayNodes(0, 100);
-      nodes.forEach(node => {
-        element.appendChild(this.getNodeElement(node));
-      });
-      // TODO pagination
+      this.generatePaginatedNodes(element, node, this.options.arrayNodesLimit);
     }
+    return element;
+  }
 
-    parent.parentElement.appendChild(element);
+  private getChildNodes(node: JsonNodeInfo, start, limit): JsonNodeInfo[] {
+    if (node.type === 'object') {
+      return node.getObjectNodes(start, limit);
+    }
+    if (node.type === 'array') {
+      return node.getArrayNodes(start, limit);
+    }
+    return [];
+  }
+
+  private generatePaginatedNodes(parent: HTMLElement, node: JsonNodeInfo, limit: number) {
+
+    if (node.length > limit) {
+      for (let start = 0; start < node.length; start += limit) {
+        this.generatePaginationStub(parent, node, start, limit);
+      }
+    } else {
+      const nodes = this.getChildNodes(node, 0, limit);
+      nodes.forEach(node => {
+        parent.appendChild(this.getNodeElement(node));
+      });
+    }
 
   }
 
-  getNodeHeader(parent: HTMLElement, node: JsonNodeInfo) {
+  private generatePaginationStub(parent: HTMLElement, node: JsonNodeInfo, start: number, limit: number) {
+    const element = document.createElement('div');
+    element.classList.add('json-node-stub');
+
+    const anchor = document.createElement('a');
+    anchor.href = 'javascript:';
+    anchor.classList.add('json-node-stub-toggler');
+
+    this.generateAccessor(anchor);
+
+    const end = Math.min(node.length, start + limit) - 1;
+    const label = document.createElement('span');
+    label.classList.add('json-node-label');
+    label.appendChild(document.createTextNode('[' + start + ' ... ' + end + ']'));
+    anchor.appendChild(label);
+
+    element.appendChild(anchor);
+
+    anchor.addEventListener('click', e => {
+      e.preventDefault();
+      if (anchor.classList.contains('json-node-open')) {
+        this.closePaginationStub(anchor);
+      } else {
+        this.openPaginationStub(anchor, this.getChildNodes(node, start, limit));
+      }
+    });
+
+    parent.appendChild(element);
+
+  }
+
+  private closePaginationStub(anchor: HTMLElement) {
+    const element = anchor.parentElement;
+    const children = element.querySelector('.json-node-children');
+    if (children) {
+      anchor.classList.remove('json-node-open');
+      element.removeChild(children);
+    }
+  }
+
+  private openPaginationStub(anchor: HTMLElement, nodes: JsonNodeInfo[]) {
+    const element = anchor.parentElement;
+    anchor.classList.add('json-node-open');
+    const children = document.createElement('div');
+    children.classList.add('json-node-children');
+    nodes.forEach(node => {
+      children.appendChild(this.getNodeElement(node));
+    });
+    element.appendChild(children);
+  }
+
+  private getNodeHeader(parent: HTMLElement, node: JsonNodeInfo) {
     const element = document.createElement('div');
     element.classList.add('json-node-header');
-
+    element.classList.add('json-node-' + node.type);
 
     if (node.type === 'object' || node.type === 'array') {
       const anchor = document.createElement('a');
+      anchor.classList.add('json-node-toggler');
       anchor.href = 'javascript:';
       if (node.length) {
         this.attachClickToggleListener(anchor);
-        this.generateAccessor(anchor, node);
+        this.generateAccessor(anchor);
       }
       this.generateLabel(anchor, node);
       this.generateTypeInfo(anchor, node);
@@ -141,13 +244,13 @@ export class BigJsonViewer {
     return element;
   }
 
-  generateAccessor(parent: HTMLElement, node: JsonNodeInfo) {
+  private generateAccessor(parent: HTMLElement) {
     const span = document.createElement('span');
     span.classList.add('json-node-accessor');
     parent.appendChild(span);
   }
 
-  generateTypeInfo(parent: HTMLElement, node: JsonNodeInfo) {
+  private generateTypeInfo(parent: HTMLElement, node: JsonNodeInfo) {
     const typeInfo = document.createElement('span');
     typeInfo.classList.add('json-node-type');
     if (node.type === 'object') {
@@ -161,27 +264,30 @@ export class BigJsonViewer {
 
   }
 
-  generateLabel(parent: HTMLElement, node: JsonNodeInfo) {
+  private generateLabel(parent: HTMLElement, node: JsonNodeInfo) {
     if (!node.path.length) {
       return;
     }
     const label = document.createElement('span');
     label.classList.add('json-node-label');
-    label.appendChild(document.createTextNode(node.path[node.path.length - 1]));
+    if (this.options.labelAsPath) {
+      label.appendChild(document.createTextNode(node.path.join('.')));
+    } else {
+      label.appendChild(document.createTextNode(node.path[node.path.length - 1]));
+    }
     parent.appendChild(label);
     parent.appendChild(document.createTextNode(': '));
   }
 
-  generateValue(parent: HTMLElement, node: JsonNodeInfo) {
+  private generateValue(parent: HTMLElement, node: JsonNodeInfo) {
     const valueElement = document.createElement('span');
     valueElement.classList.add('json-node-value');
-    valueElement.classList.add('json-node-' + node.type);
     valueElement.appendChild(document.createTextNode(node.getValue()));
     parent.appendChild(valueElement);
   }
 
 
-  generateLinks(parent: HTMLElement, node: JsonNodeInfo) {
+  private generateLinks(parent: HTMLElement, node: JsonNodeInfo) {
 
   }
 

@@ -42,7 +42,7 @@ export interface ParseContext {
   limit?: number;
   objectKey?: string;
   objectKeys?: string[]; // truthy if keys should be resolved
-  objectNodes?: { [key: string]: JsonNodeInfo }; // truthy if nodes should be resolved
+  objectNodes?: JsonNodeInfo[]; // truthy if nodes should be resolved
   arrayNodes?: JsonNodeInfo[]; // truthy if nodes should be resolved
   value?: string | number | boolean; // truthy if value should be resolved
   nodeInfo?: JsonNodeInfo;  // truthy if node info should be filled
@@ -90,9 +90,8 @@ export class JsonNodeInfo {
   public getByIndex(index: number): JsonNodeInfo {
     if (this.type === 'object') {
       const nodes = this.getObjectNodes(index, 1);
-      const keys = Object.keys(nodes);
-      if (keys.length) {
-        return nodes[keys[0]];
+      if (nodes.length) {
+        return nodes[0];
       }
     }
     if (this.type === 'array') {
@@ -116,7 +115,7 @@ export class JsonNodeInfo {
         objectKey: key,
       };
       this.parser.parseObject(this.index, ctx);
-      return ctx.objectNodes ? ctx.objectNodes[key] : undefined;
+      return ctx.objectNodes ? ctx.objectNodes[0] : undefined;
     }
     if (this.type === 'array') {
       return this.getByIndex(parseInt(key));
@@ -147,14 +146,14 @@ export class JsonNodeInfo {
    * @param {number} start
    * @param {number} limit
    */
-  public getObjectNodes(start = 0, limit?: number): { [key: string]: JsonNodeInfo } {
+  public getObjectNodes(start = 0, limit?: number): JsonNodeInfo[] {
     if (this.type !== 'object') {
       throw new Error(`Unsupported method on non-object ${this.type}`);
     }
     assertStartLimit(start, limit);
     const ctx: ParseContext = {
       path: this.path,
-      objectNodes: {},
+      objectNodes: [],
       start: start,
       limit: limit
     };
@@ -272,7 +271,7 @@ export class JsonParser {
 
     let length = 0;
     const keys = [];
-    const dataMap = {};
+    const nodes = [];
 
     while (index <= this.data.length) {
       if (index === this.data.length) {
@@ -311,10 +310,9 @@ export class JsonParser {
       index = this.skipIgnored(index);
 
       if (valueCtx && ctx.objectNodes) {
-        dataMap[keyCtx.value as string] = valueCtx.nodeInfo;
+        nodes.push(valueCtx.nodeInfo);
       } else if (valueCtx && ctx.objectKey !== undefined) {
-        ctx.objectNodes = {};
-        ctx.objectNodes[ctx.objectKey] = valueCtx.nodeInfo;
+        ctx.objectNodes = [valueCtx.nodeInfo];
         return;
       }
 
@@ -336,7 +334,7 @@ export class JsonParser {
       ctx.objectKeys = keys;
     }
     if (ctx && ctx.objectNodes) {
-      ctx.objectNodes = dataMap;
+      ctx.objectNodes = nodes;
     }
 
     function getKeyContext(keyIndex): ParseContext {

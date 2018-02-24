@@ -8,44 +8,126 @@
     .json-node-type {
       color: #7f7f7f;
       padding: 0 0.5em;
-      box-sizing: border-box;
     }
+
+    .json-node-toggler,
+    .json-node-stub-toggler {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .json-node-toggler:hover,
+    .json-node-stub-toggler:hover {
+      background: #e2e2e2;
+    }
+
     .json-node-children,
     .json-node-root {
       padding-left: 1em;
     }
+
     .json-node-label {
       padding-left: 0.5em;
+      color: #184183;
     }
+
+    .json-node-number .json-node-value {
+      color: blue;
+    }
+    .json-node-string .json-node-value {
+      color: green;
+    }
+    .json-node-string .json-node-value::before  {
+      content: '"';
+    }
+    .json-node-string .json-node-value::after {
+      content: '"';
+    }
+    .json-node-boolean .json-node-value {
+      color: #95110f;
+    }
+    .json-node-null .json-node-value  {
+      color: #959310;
+    }
+
+    .json-node-number .json-node-type,
+    .json-node-string .json-node-type,
+    .json-node-boolean .json-node-type,
+    .json-node-null .json-node-type {
+      display: none;
+    }
+
     .json-node-accessor {
       position: relative;
     }
+
     .json-node-accessor::before {
       position: absolute;
-      content: '►';
+      content: '▶';
+      font-size: 0.6em;
+      line-height: 1.6em;
       right: 0;
       transition: transform 100ms ease-in-out;
     }
+
     .json-node-open .json-node-accessor::before {
       transform: rotate(90deg);
     }
+
+    .json-node-children {
+      animation-duration: 500ms;
+      animation-name: json-node-children-open;
+      transform-origin: top;
+    }
+
+    .json-node-stub-toggler .json-node-label {
+      color: #7f7f7f;
+    }
+
+    @keyframes json-node-children-open {
+      from {
+        transform: scaleY(0);
+      }
+      to {
+        transform: scaleY(1);
+      }
+    }
+
   </style>
 </head>
 <body>
 <h1>Big JSON Viewer Demo</h1>
 
 <div id="container1"></div>
+<div id="container2"></div>
 <script>
-  const viewer = new BigJsonViewer(JSON.stringify({
+  const testData1= {
     element1: 'str',
     element2: 1234,
     element3: [
       23,
       43,
+      true,
+      false,
+      null,
       {name: 'special'}
     ]
-  }));
+  };
+  const viewer = new BigJsonViewer(JSON.stringify(testData1), {});
   document.getElementById('container1').appendChild(viewer.getRootFragment());
+
+  const list = new Array(210);
+  for (var i = 0; i < list.length; i++) {
+    list[i] = Math.random();
+    if (list[i] < 0.2) {
+      list[i] = 'hey';
+    }
+  }
+
+  const viewer2 = new BigJsonViewer(JSON.stringify(list));
+  document.getElementById('container2').appendChild(viewer2.getRootFragment());
+
+
 </script>
 </body>
 </html>
