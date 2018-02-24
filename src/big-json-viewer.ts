@@ -1,6 +1,9 @@
 import {JsonNodeInfo, JsonParser} from './json-parser';
 
-export interface NodeElement extends HTMLDivElement {
+export interface JsonNodesStubElement extends HTMLDivElement {
+  headerElement: HTMLElement;
+  childrenElement?: HTMLElement;
+
   isNodeOpen(): boolean;
 
   openNode();
@@ -9,6 +12,13 @@ export interface NodeElement extends HTMLDivElement {
 
   toggleNode();
 }
+
+export interface JsonNodeElement extends JsonNodesStubElement {
+  jsonNode: JsonNodeInfo;
+
+  openPath(path: string[]): boolean;
+}
+
 
 export interface BigJsonViewerOptions {
   /**
@@ -52,40 +62,46 @@ export class BigJsonViewer {
     }
   }
 
-  getRootFragment(): DocumentFragment {
-    const fragment = document.createDocumentFragment();
+  getRootElement(): JsonNodeElement {
 
     const rootNode = this.parser.getRootNodeInfo();
     const nodeElement = this.getNodeElement(rootNode);
     nodeElement.classList.add('json-node-root');
-    fragment.appendChild(nodeElement);
 
-    return fragment;
+    return nodeElement;
   }
 
-  getNodeElement(node: JsonNodeInfo): HTMLDivElement {
-    const element = document.createElement('div');
+  getNodeElement(node: JsonNodeInfo): JsonNodeElement {
+    const element = document.createElement('div') as JsonNodeElement;
     element.classList.add('json-node');
+
+    element.jsonNode = node;
 
     const header = this.getNodeHeader(element, node);
     element.appendChild(header);
+    element.headerElement = header;
 
-    if (node.type === 'object' || node.type === 'array') {
-      this.attachInteractivity(header as NodeElement, node);
-    }
+    this.attachInteractivity(element, node);
 
     return element;
   }
 
-  private attachInteractivity(nodeElement: NodeElement, node: JsonNodeInfo) {
+  private attachInteractivity(nodeElement: JsonNodeElement, node: JsonNodeInfo) {
+
     nodeElement.isNodeOpen = () => {
-      return nodeElement.classList.contains('json-node-open');
+      if (this.isOpenableNode(node)) {
+        return nodeElement.headerElement.classList.contains('json-node-open');
+      }
     };
     nodeElement.openNode = () => {
-      this.openNode(nodeElement as NodeElement, node);
+      if (this.isOpenableNode(node)) {
+        this.openNode(nodeElement, node);
+      }
     };
     nodeElement.closeNode = () => {
-      this.closeNode(nodeElement as NodeElement);
+      if (this.isOpenableNode(node)) {
+        this.closeNode(nodeElement);
+      }
     };
     nodeElement.toggleNode = () => {
       if (nodeElement.isNodeOpen()) {
@@ -94,6 +110,14 @@ export class BigJsonViewer {
         nodeElement.openNode();
       }
     };
+
+    nodeElement.openPath = (path: string[]): boolean => {
+      if (this.isOpenableNode(node)) {
+        return this.openPath(nodeElement, node, path);
+      }
+      return false;
+    };
+
   }
 
   private attachClickToggleListener(anchor: HTMLAnchorElement) {
@@ -106,29 +130,108 @@ export class BigJsonViewer {
     });
   }
 
-  private closeNode(parent: NodeElement) {
-    if (!parent.isNodeOpen()) {
+  private isOpenableNode(node: JsonNodeInfo) {
+    return (node.type === 'array' || node.type === 'object') && node.length;
+  }
+
+  private closeNode(nodeElement: JsonNodeElement) {
+    if (!nodeElement.isNodeOpen()) {
       return;
     }
-    const nodeParent = parent.parentElement;
-    const children = nodeParent.querySelector('.json-node-children');
-    if (children) {
-      parent.classList.remove('json-node-open');
-      nodeParent.removeChild(children);
+    if (nodeElement.childrenElement) {
+      nodeElement.headerElement.classList.remove('json-node-open');
+      nodeElement.removeChild(nodeElement.childrenElement);
+      nodeElement.childrenElement = null;
     }
   }
 
-  private openNode(parent: NodeElement, node: JsonNodeInfo) {
-    if (parent.isNodeOpen()) {
+  private openNode(nodeElement: JsonNodeElement, node: JsonNodeInfo) {
+    if (nodeElement.isNodeOpen()) {
       return;
     }
-    parent.classList.add('json-node-open');
+    nodeElement.headerElement.classList.add('json-node-open');
 
-    parent.parentElement.appendChild(this.getPaginatedNodeChildren(node));
+    nodeElement.childrenElement = this.getPaginatedNodeChildren(node);
+
+    nodeElement.appendChild(nodeElement.childrenElement);
 
   }
 
-  private getPaginatedNodeChildren(node: JsonNodeInfo): HTMLElement {
+  private openKey(nodeElement: JsonNodeElement, key: string): JsonNodeElement {
+    const node = nodeElement.jsonNode;
+    let children: HTMLCollection = null;
+    let index = -1;
+    if (node.type === 'object') {
+      const keys = node.getObjectKeys();
+      index = keys.indexOf(key);
+      if (index === -1) {
+        return null;
+      }
+
+      nodeElement.openNode();
+
+      // find correct stub in pagination
+      if (node.length > this.options.objectNodesLimit) {
+        const stubIndex = Math.floor(index / this.options.objectNodesLimit);
+        const stub = nodeElement.childrenElement.children[stubIndex] as JsonNodesStubElement;
+        if (stub) {
+          stub.openNode();
+          index -= stubIndex * this.options.objectNodesLimit;
+          children = stub.childrenElement.children;
+        }
+
+      } else {
+        children = nodeElement.childrenElement.children;
+      }
+    }
+    if (node.type === 'array') {
+      index = parseInt(key);
+      if (isNaN(index) || index >= node.length || index < 0) {
+        return null;
+      }
+
+      nodeElement.openNode();
+      // find correct stub in pagination
+      if (node.length > this.options.arrayNodesLimit) {
+        const stubIndex = Math.floor(index / this.options.arrayNodesLimit);
+        const stub = nodeElement.childrenElement.children[stubIndex] as JsonNodesStubElement;
+        if (stub) {
+          stub.openNode();
+          index -= stubIndex * this.options.arrayNodesLimit;
+          children = stub.childrenElement.children;
+        }
+      } else {
+        children = nodeElement.childrenElement.children;
+      }
+    }
+    if (children && index >= 0 && index < children.length) {
+      const childNodeElement = children[index] as JsonNodeElement;
+      if (!childNodeElement.jsonNode) {
+        return null;
+      }
+      childNodeElement.openNode();
+      return childNodeElement;
+    }
+    return null;
+  }
+
+  private openPath(nodeElement: JsonNodeElement, node: JsonNodeInfo, path: string[]): boolean {
+    if (!path.length) {
+      nodeElement.openNode();
+      return true;
+    }
+
+    let element = nodeElement;
+    for (let i = 0; i < path.length; i++) {
+      if (!element) {
+        return false;
+      }
+      element = this.openKey(element, path[i]);
+    }
+    return true;
+  }
+
+  private getPaginatedNodeChildren(node: JsonNodeInfo): HTMLDivElement {
     const element = document.createElement('div');
     element.classList.add('json-node-children');
 
@@ -155,7 +258,7 @@ export class BigJsonViewer {
 
     if (node.length > limit) {
       for (let start = 0; start < node.length; start += limit) {
-        this.generatePaginationStub(parent, node, start, limit);
+        parent.appendChild(this.getPaginationStub(node, start, limit));
       }
     } else {
       const nodes = this.getChildNodes(node, 0, limit);
@@ -166,13 +269,15 @@ export class BigJsonViewer {
 
   }
 
-  private generatePaginationStub(parent: HTMLElement, node: JsonNodeInfo, start: number, limit: number) {
-    const element = document.createElement('div');
-    element.classList.add('json-node-stub');
+  private getPaginationStub(node: JsonNodeInfo, start: number, limit: number): JsonNodesStubElement {
+    const stubElement = document.createElement('div') as JsonNodesStubElement;
+    stubElement.classList.add('json-node-stub');
 
     const anchor = document.createElement('a');
     anchor.href = 'javascript:';
     anchor.classList.add('json-node-stub-toggler');
+
+    stubElement.headerElement = anchor;
 
     this.generateAccessor(anchor);
 
@@ -182,39 +287,57 @@ export class BigJsonViewer {
     label.appendChild(document.createTextNode('[' + start + ' ... ' + end + ']'));
     anchor.appendChild(label);
 
-    element.appendChild(anchor);
+    stubElement.appendChild(anchor);
 
     anchor.addEventListener('click', e => {
       e.preventDefault();
-      if (anchor.classList.contains('json-node-open')) {
-        this.closePaginationStub(anchor);
-      } else {
-        this.openPaginationStub(anchor, this.getChildNodes(node, start, limit));
-      }
+      stubElement.toggleNode();
     });
 
-    parent.appendChild(element);
+    stubElement.isNodeOpen = () => {
+      return anchor.classList.contains('json-node-open');
+    };
 
+    stubElement.openNode = () => {
+      if (!stubElement.isNodeOpen()) {
+        this.openPaginationStub(stubElement, this.getChildNodes(node, start, limit));
+      }
+    };
+
+    stubElement.closeNode = () => {
+      if (stubElement.isNodeOpen()) {
+        this.closePaginationStub(stubElement);
+      }
+    };
+
+    stubElement.toggleNode = () => {
+      if (stubElement.isNodeOpen()) {
+        stubElement.closeNode();
+      } else {
+        stubElement.openNode();
+      }
+    };
+
+    return stubElement;
   }
 
-  private closePaginationStub(anchor: HTMLElement) {
-    const element = anchor.parentElement;
-    const children = element.querySelector('.json-node-children');
-    if (children) {
-      anchor.classList.remove('json-node-open');
-      element.removeChild(children);
+  private closePaginationStub(stubElement: JsonNodesStubElement) {
+    if (stubElement.childrenElement) {
+      stubElement.headerElement.classList.remove('json-node-open');
+      stubElement.removeChild(stubElement.childrenElement);
+      stubElement.childrenElement = null;
     }
   }
 
-  private openPaginationStub(anchor: HTMLElement, nodes: JsonNodeInfo[]) {
-    const element = anchor.parentElement;
-    anchor.classList.add('json-node-open');
+  private openPaginationStub(stubElement: JsonNodesStubElement, nodes: JsonNodeInfo[]) {
+    stubElement.headerElement.classList.add('json-node-open');
     const children = document.createElement('div');
     children.classList.add('json-node-children');
+    stubElement.childrenElement = children;
     nodes.forEach(node => {
       children.appendChild(this.getNodeElement(node));
     });
-    element.appendChild(children);
+    stubElement.appendChild(children);
   }
 
   private getNodeHeader(parent: HTMLElement, node: JsonNodeInfo) {
@@ -291,11 +414,11 @@ export class BigJsonViewer {
 
   }
 
-  private findNodeElement(el: HTMLElement): NodeElement {
+  private findNodeElement(el: HTMLElement): JsonNodeElement {
     while (el && !el['isNodeOpen']) {
       el = el.parentElement;
     }
-    return el as NodeElement;
+    return el as JsonNodeElement;
   }
 
 
