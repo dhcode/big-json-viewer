@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Big JSON Viewer Demo</title>
+  <script src="../dist/big-json-viewer.bundle.js"></script>
+  <style type="text/css">
+    .json-node-type {
+      color: #7f7f7f;
+      padding: 0 0.5em;
+      box-sizing: border-box;
+    }
+    .json-node-children,
+    .json-node-root {
+      padding-left: 1em;
+    }
+    .json-node-label {
+      padding-left: 0.5em;
+    }
+    .json-node-accessor {
+      position: relative;
+    }
+    .json-node-accessor::before {
+      position: absolute;
+      content: '►';
+      right: 0;
+      transition: transform 100ms ease-in-out;
+    }
+    .json-node-open .json-node-accessor::before {
+      transform: rotate(90deg);
+    }
+  </style>
+</head>
+<body>
+<h1>Big JSON Viewer Demo</h1>
+
+<div id="container1"></div>
+<script>
+  const viewer = new BigJsonViewer(JSON.stringify({
+    element1: 'str',
+    element2: 1234,
+    element3: [
+      23,
+      43,
+      {name: 'special'}
+    ]
+  }));
+  document.getElementById('container1').appendChild(viewer.getRootFragment());
+</script>
+</body>
+</html>

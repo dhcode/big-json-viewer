@@ -4,7 +4,8 @@
   "description": "JavaScript Library to view big JSON structures.",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "webpack",
+    "watch": "webpack -w",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "karma": "karma start"
   },
@@ -17,6 +18,10 @@
   ],
   "author": "Dominik Herbst",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dhcode/big-json-viewer.git"
+  },
   "devDependencies": {
     "@types/jasmine": "^2.8.6",
     "jasmine-core": "^2.99.1",
@@ -24,7 +29,9 @@
     "karma-chrome-launcher": "^2.2.0",
     "karma-jasmine": "^1.1.1",
     "karma-typescript": "^3.0.12",
+    "ts-loader": "^3.5.0",
     "tslint": "^5.9.1",
-    "typescript": "^2.7.2"
+    "typescript": "^2.7.2",
+    "webpack": "^3.11.0"
   }
 }
