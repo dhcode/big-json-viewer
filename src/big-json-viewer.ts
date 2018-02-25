@@ -56,7 +56,16 @@ export interface BigJsonViewerOptions {
    */
   labelAsPath?: boolean;
 
+  /**
+   * What label should be displayed on the Copy Path link.
+   * Set null to disable this link
+   */
   linkLabelCopyPath?: string;
+
+  /**
+   * What label should be displayed on the Expand all link.
+   * Set null to disable this link
+   */
   linkLabelExpandAll?: string;
 }
 
@@ -485,7 +494,7 @@ export class BigJsonViewer {
 
   private generateLinks(parent: HTMLElement, node: JsonNodeInfo) {
 
-    if (this.isOpenableNode(node)) {
+    if (this.isOpenableNode(node) && this.options.linkLabelExpandAll) {
       const link = parent.appendChild(document.createElement('a'));
       link.classList.add('json-node-link');
       link.href = 'javascript:';
@@ -499,7 +508,7 @@ export class BigJsonViewer {
       });
     }
 
-    if (node.path.length) {
+    if (node.path.length && this.options.linkLabelCopyPath) {
       const link = parent.appendChild(document.createElement('a'));
       link.classList.add('json-node-link');
       link.href = 'javascript:';
