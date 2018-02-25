@@ -5,3 +5,4 @@ node_modules
 /dist
 /.cache
 /demo-dist
+/docs/tmp

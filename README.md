@@ -4,7 +4,7 @@
 [![npm](https://img.shields.io/npm/v/big-json-viewer.svg)](https://www.npmjs.com/package/big-json-viewer)
 
 
-A TypeScript library that enables efficient working with large JSON data in the browser.
+A JavaScript library that enables efficient working with large JSON data in the browser.
 
 The JSON data is held as ArrayBuffer and never parsed completely.
 
@@ -113,6 +113,10 @@ Can fire very often when Expand all button is pressed, depending on the structur
 #### closeStub
 
 Fires when a pagination stub is being closed. The target is a `JsonNodesStubElement`.
+
+#### copyPath
+
+Fires when the user clicks on the Copy Path link of a node.
 
 
 ## License

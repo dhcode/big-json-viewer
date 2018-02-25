@@ -7,8 +7,8 @@
   "scripts": {
     "build": "tsc",
     "preversion": "tsc",
-    "build-demo": "parcel build demo/index.html --out-dir demo-dist/output",
-    "watch-demo": "parcel demo/index.html --out-dir demo-dist/output",
+    "build-docs": "parcel build docs-src/index.html --out-dir docs --public-url ./",
+    "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "karma": "karma start",
     "test": "karma start --single-run --browsers ChromeHeadless",

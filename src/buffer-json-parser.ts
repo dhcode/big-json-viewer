@@ -1,3 +1,5 @@
+import {JsonNodeInfo, NodeType} from './json-node-info';
+
 const BRACE_START = '{'.charCodeAt(0);
 const BRACE_END = '}'.charCodeAt(0);
 const BRACKET_START = '['.charCodeAt(0);
@@ -26,15 +28,6 @@ const NULL = 'null'.split('').map(d => d.charCodeAt(0));
 const TRUE = 'true'.split('').map(d => d.charCodeAt(0));
 const FALSE = 'false'.split('').map(d => d.charCodeAt(0));
 
-function bufToString(buf: number | number[] | Uint16Array) {
-  if (typeof(buf) === 'number') {
-    buf = [buf];
-  }
-  return String.fromCharCode.apply(null, buf);
-}
-
-
-export type NodeType = 'string' | 'number' | 'array' | 'object' | 'boolean' | 'null';
 
 export interface ParseContext {
   path: string[];
@@ -42,21 +35,21 @@ export interface ParseContext {
   limit?: number;
   objectKey?: string;
   objectKeys?: string[]; // truthy if keys should be resolved
-  objectNodes?: JsonNodeInfo[]; // truthy if nodes should be resolved
-  arrayNodes?: JsonNodeInfo[]; // truthy if nodes should be resolved
+  objectNodes?: BufferJsonNodeInfo[]; // truthy if nodes should be resolved
+  arrayNodes?: BufferJsonNodeInfo[]; // truthy if nodes should be resolved
   value?: string | number | boolean; // truthy if value should be resolved
-  nodeInfo?: JsonNodeInfo;  // truthy if node info should be filled
+  nodeInfo?: BufferJsonNodeInfo;  // truthy if node info should be filled
 }
 
-export class JsonNodeInfo {
+export class BufferJsonNodeInfo implements JsonNodeInfo {
   public type: NodeType;
   public path: string[] = [];
   public length?: number; // in case of array, object, string
   public chars: number;
-  private parser: JsonParser;
+  private parser: BufferJsonParser;
   private index;
 
-  constructor(parser: JsonParser, index: number, path: string[]) {
+  constructor(parser: BufferJsonParser, index: number, path: string[]) {
     this.parser = parser;
     this.index = index;
     this.path = path;
@@ -87,7 +80,7 @@ export class JsonNodeInfo {
    * Use the index from getObjectKeys
    * @param index
    */
-  public getByIndex(index: number): JsonNodeInfo {
+  public getByIndex(index: number): BufferJsonNodeInfo {
     if (this.type === 'object') {
       const nodes = this.getObjectNodes(index, 1);
       if (nodes.length) {
@@ -108,7 +101,7 @@ export class JsonNodeInfo {
    * Use the index from getObjectKeys
    * @param key
    */
-  public getByKey(key: string): JsonNodeInfo {
+  public getByKey(key: string): BufferJsonNodeInfo {
     if (this.type === 'object') {
       const ctx: ParseContext = {
         path: this.path,
@@ -126,15 +119,15 @@ export class JsonNodeInfo {
   /**
    * Find the information for a given path
    * @param {string[]} path
-   * @returns {JsonNodeInfo}
+   * @returns {BufferJsonNodeInfo}
    */
-  public getByPath(path: string[]): JsonNodeInfo {
+  public getByPath(path: string[]): BufferJsonNodeInfo {
     if (!path || !path.length) {
       return undefined;
     }
     const p = path.slice();
     let key: string;
-    let node: JsonNodeInfo = this;
+    let node: BufferJsonNodeInfo = this;
     while ((key = p.shift()) !== undefined && node) {
       node = node.getByKey(key);
     }
@@ -146,7 +139,7 @@ export class JsonNodeInfo {
    * @param {number} start
    * @param {number} limit
    */
-  public getObjectNodes(start = 0, limit?: number): JsonNodeInfo[] {
+  public getObjectNodes(start = 0, limit?: number): BufferJsonNodeInfo[] {
     if (this.type !== 'object') {
       throw new Error(`Unsupported method on non-object ${this.type}`);
     }
@@ -166,7 +159,7 @@ export class JsonNodeInfo {
    * @param {number} start
    * @param {number} limit
    */
-  public getArrayNodes(start = 0, limit?: number): JsonNodeInfo[] {
+  public getArrayNodes(start = 0, limit?: number): BufferJsonNodeInfo[] {
     if (this.type !== 'array') {
       throw new Error(`Unsupported method on non-array ${this.type}`);
     }
@@ -189,12 +182,15 @@ export class JsonNodeInfo {
   }
 }
 
+
+
+
 declare const TextEncoder;
 
 /**
  * Parses meta data about a JSON structure in an ArrayBuffer.
  */
-export class JsonParser {
+export class BufferJsonParser {
   data: Uint16Array;
 
   constructor(data: ArrayBuffer | string) {
@@ -210,15 +206,12 @@ export class JsonParser {
     }
   }
 
-  /**
-   * Returns information on the node at start
-   */
-  getRootNodeInfo(): JsonNodeInfo {
+  getRootNodeInfo(): BufferJsonNodeInfo {
     let start = this.skipIgnored(0);
 
     const ctx: ParseContext = {
       path: [],
-      nodeInfo: new JsonNodeInfo(this, start, [])
+      nodeInfo: new BufferJsonNodeInfo(this, start, [])
     };
 
     const end = this.parseValue(start, ctx, false);
@@ -302,7 +295,7 @@ export class JsonParser {
       if (keyCtx && ctx && (ctx.objectNodes || keyCtx.value === ctx.objectKey)) {
         valueCtx = {
           path: ctx.path,
-          nodeInfo: new JsonNodeInfo(this, index, [...ctx.path, keyCtx.value as string])
+          nodeInfo: new BufferJsonNodeInfo(this, index, [...ctx.path, keyCtx.value as string])
         };
       }
 
@@ -370,7 +363,7 @@ export class JsonParser {
       if (isInRange(length) && ctx.arrayNodes) {
         valueCtx = {
           path: ctx.path,
-          nodeInfo: new JsonNodeInfo(this, index, [...ctx.path, length.toString()])
+          nodeInfo: new BufferJsonNodeInfo(this, index, [...ctx.path, length.toString()])
         };
       }
 
@@ -507,6 +500,13 @@ export class JsonParser {
   }
 }
 
+
+function bufToString(buf: number | number[] | Uint16Array) {
+  if (typeof(buf) === 'number') {
+    buf = [buf];
+  }
+  return String.fromCharCode.apply(null, buf);
+}
 
 function assertStartLimit(start, limit) {
   if (isNaN(start) || start < 0) {
