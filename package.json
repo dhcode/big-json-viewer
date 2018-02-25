@@ -20,7 +20,8 @@
     "JavaScript",
     "TypeScript",
     "big",
-    "JSON"
+    "JSON",
+    "viewer"
   ],
   "author": "Dominik Herbst",
   "license": "MIT",

@@ -29,10 +29,23 @@
       {},
     ],
     element4: [],
-    element5: "this should be some long text\nwith line break"
+    element5: "this should be some long text\nwith line break",
+    element6: {
+      name: 'Hero',
+      age: 32,
+      birthday: {year: 1986, month: 4, day: 30}
+    }
   };
   const rootNode1 = BigJsonViewer.elementFromData(JSON.stringify(testData1));
   document.getElementById('container1').appendChild(rootNode1);
+
+  rootNode1.addEventListener('openNode', function(e) {
+    console.log('openNode', e.target.jsonNode.path);
+  });
+
+  rootNode1.addEventListener('closeNode', function(e) {
+    console.log('closeNode', e);
+  });
 
   const list = new Array(210);
   for (let i = 0; i < list.length; i++) {

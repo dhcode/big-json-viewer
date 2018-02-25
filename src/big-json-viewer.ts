@@ -32,6 +32,12 @@ export interface JsonNodeElement extends JsonNodesStubElement {
    * Returns the number of opened nodes.
    */
   openAll(maxDepth?: number, paginated?: PaginatedOption): number;
+
+  /**
+   * Get a list of all opened paths
+   * withsStubs is true by default, it makes sure, that opened stubs are represented
+   */
+  getOpenPaths(withStubs?: boolean): string[][];
 }
 
 
@@ -127,10 +133,11 @@ export class BigJsonViewer {
 
   private attachInteractivity(nodeElement: JsonNodeElement, node: JsonNodeInfo) {
 
-    nodeElement.isNodeOpen = () => {
+    nodeElement.isNodeOpen = (): boolean => {
       if (this.isOpenableNode(node)) {
         return nodeElement.headerElement.classList.contains('json-node-open');
       }
+      return false;
     };
     nodeElement.openNode = () => {
       if (this.isOpenableNode(node)) {
@@ -164,6 +171,13 @@ export class BigJsonViewer {
       return 0;
     };
 
+    nodeElement.getOpenPaths = (withStubs = true): string[][] => {
+      if (this.isOpenableNode(node)) {
+        return this.getOpenPaths(nodeElement, withStubs);
+      }
+      return [];
+    };
+
   }
 
   private attachClickToggleListener(anchor: HTMLAnchorElement) {
@@ -188,7 +202,42 @@ export class BigJsonViewer {
       nodeElement.headerElement.classList.remove('json-node-open');
       nodeElement.removeChild(nodeElement.childrenElement);
       nodeElement.childrenElement = null;
+      this.dispatchNodeEvent('closeNode', nodeElement);
     }
+  }
+
+  private getOpenPaths(nodeElement: JsonNodeElement, withSubs): string[][] {
+    const result: string[][] = [];
+    if (!nodeElement.isNodeOpen()) {
+      return result;
+    }
+
+    const children = nodeElement.childrenElement.children;
+    const nodeElements = this.getVisibleChildren(children);
+    for (let i = 0; i < nodeElements.length; i++) {
+      const element = nodeElements[i];
+      if (element.isNodeOpen()) {
+        result.push(...this.getOpenPaths(element, withSubs));
+      }
+    }
+
+    const limit = this.getPaginationLimit(nodeElement.jsonNode);
+    // find open stubs
+    if (!result.length && limit) {
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i] as JsonNodesStubElement;
+        if (child.isNodeOpen() && child.childrenElement && child.childrenElement.children.length) {
+          const first = child.childrenElement.children[0] as JsonNodeElement;
+          if (first.jsonNode) {
+            result.push(first.jsonNode.path);
+          }
+        }
+      }
+    }
+    if (!result.length) {
+      result.push(nodeElement.jsonNode.path);
+    }
+    return result;
   }
 
   private openNode(nodeElement: JsonNodeElement, node: JsonNodeInfo) {
@@ -200,6 +249,23 @@ export class BigJsonViewer {
     nodeElement.childrenElement = this.getPaginatedNodeChildren(node);
 
     nodeElement.appendChild(nodeElement.childrenElement);
+
+    this.dispatchNodeEvent('openNode', nodeElement);
+
+  }
+
+  private dispatchNodeEvent(type: string, nodeElement: JsonNodesStubElement) {
+    let event: Event;
+    if (document.createEvent) {
+      event = document.createEvent('Event');
+      event.initEvent(type, true, false);
+    } else {
+      event = new Event(type, {
+        bubbles: true,
+        cancelable: false
+      });
+    }
+    nodeElement.dispatchEvent(event);
 
   }
 
@@ -313,15 +379,47 @@ export class BigJsonViewer {
     return opened;
   }
 
+  /**
+   * Returns the pagination limit, if the node should have
+   */
+  private getPaginationLimit(node: JsonNodeInfo): number {
+    if (node.type === 'array' && node.length > this.options.arrayNodesLimit) {
+      return this.options.arrayNodesLimit;
+    }
+    if (node.type === 'object' && node.length > this.options.objectNodesLimit) {
+      return this.options.objectNodesLimit;
+    }
+    return 0;
+  }
+
+  private getVisibleChildren(children: HTMLCollection): JsonNodeElement[] {
+    const result: JsonNodeElement[] = [];
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i] as JsonNodeElement;
+      if (child.jsonNode) { // is a node
+        result.push(child);
+
+      } else if (child.openNode && child.isNodeOpen() && child.childrenElement) { // is a stub
+        result.push(...this.getVisibleChildren(child.childrenElement.children));
+      }
+    }
+    return result;
+  }
+
   private getPaginatedNodeChildren(node: JsonNodeInfo): HTMLDivElement {
     const element = document.createElement('div');
     element.classList.add('json-node-children');
 
-    if (node.type === 'object') {
-      this.generatePaginatedNodes(element, node, this.options.objectNodesLimit);
-    }
-    if (node.type === 'array') {
-      this.generatePaginatedNodes(element, node, this.options.arrayNodesLimit);
+    const limit = this.getPaginationLimit(node);
+    if (limit) {
+      for (let start = 0; start < node.length; start += limit) {
+        element.appendChild(this.getPaginationStub(node, start, limit));
+      }
+    } else {
+      const nodes = this.getChildNodes(node, 0, limit);
+      nodes.forEach(node => {
+        element.appendChild(this.getNodeElement(node));
+      });
     }
     return element;
   }
@@ -334,21 +432,6 @@ export class BigJsonViewer {
       return node.getArrayNodes(start, limit);
     }
     return [];
-  }
-
-  private generatePaginatedNodes(parent: HTMLElement, node: JsonNodeInfo, limit: number) {
-
-    if (node.length > limit) {
-      for (let start = 0; start < node.length; start += limit) {
-        parent.appendChild(this.getPaginationStub(node, start, limit));
-      }
-    } else {
-      const nodes = this.getChildNodes(node, 0, limit);
-      nodes.forEach(node => {
-        parent.appendChild(this.getNodeElement(node));
-      });
-    }
-
   }
 
   private getPaginationStub(node: JsonNodeInfo, start: number, limit: number): JsonNodesStubElement {
@@ -408,6 +491,7 @@ export class BigJsonViewer {
       stubElement.headerElement.classList.remove('json-node-open');
       stubElement.removeChild(stubElement.childrenElement);
       stubElement.childrenElement = null;
+      this.dispatchNodeEvent('closeStub', stubElement);
     }
   }
 
@@ -420,6 +504,8 @@ export class BigJsonViewer {
       children.appendChild(this.getNodeElement(node));
     });
     stubElement.appendChild(children);
+
+    this.dispatchNodeEvent('openStub', stubElement);
   }
 
   private getNodeHeader(parent: HTMLElement, node: JsonNodeInfo) {
