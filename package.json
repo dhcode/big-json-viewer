@@ -2,10 +2,13 @@
   "name": "big-json-viewer",
   "version": "0.0.1",
   "description": "JavaScript Library to view big JSON structures.",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "webpack",
-    "watch": "webpack -w",
+    "build": "tsc",
+    "prepack": "tsc",
+    "build-demo": "parcel build demo/index.html --out-dir demo-dist/output",
+    "watch-demo": "parcel demo/index.html --out-dir demo-dist/output",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "karma": "karma start"
   },
@@ -29,9 +32,8 @@
     "karma-chrome-launcher": "^2.2.0",
     "karma-jasmine": "^1.1.1",
     "karma-typescript": "^3.0.12",
-    "ts-loader": "^3.5.0",
+    "parcel-bundler": "^1.6.2",
     "tslint": "^5.9.1",
-    "typescript": "^2.7.2",
-    "webpack": "^3.11.0"
+    "typescript": "^2.7.2"
   }
 }

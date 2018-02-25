@@ -3,102 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Big JSON Viewer Demo</title>
-  <script src="../dist/big-json-viewer.bundle.js"></script>
-  <style type="text/css">
-    .json-node-type {
-      color: #7f7f7f;
-      padding: 0 0.5em;
-    }
-
-    .json-node-toggler,
-    .json-node-stub-toggler {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .json-node-toggler:hover,
-    .json-node-stub-toggler:hover {
-      background: #e2e2e2;
-    }
-
-    .json-node-children,
-    .json-node-root {
-      padding-left: 1em;
-    }
-
-    .json-node-label {
-      padding-left: 0.5em;
-      color: #184183;
-    }
-
-    .json-node-number .json-node-value {
-      color: blue;
-    }
-
-    .json-node-string .json-node-value {
-      color: green;
-    }
-
-    .json-node-string .json-node-value::before {
-      content: '"';
-    }
-
-    .json-node-string .json-node-value::after {
-      content: '"';
-    }
-
-    .json-node-boolean .json-node-value {
-      color: #95110f;
-    }
-
-    .json-node-null .json-node-value {
-      color: #959310;
-    }
-
-    .json-node-number .json-node-type,
-    .json-node-string .json-node-type,
-    .json-node-boolean .json-node-type,
-    .json-node-null .json-node-type {
-      display: none;
-    }
-
-    .json-node-accessor {
-      position: relative;
-    }
-
-    .json-node-accessor::before {
-      position: absolute;
-      content: '▶';
-      font-size: 0.6em;
-      line-height: 1.6em;
-      right: 0;
-      transition: transform 100ms ease-in-out;
-    }
-
-    .json-node-open .json-node-accessor::before {
-      transform: rotate(90deg);
-    }
-
-    .json-node-children {
-      animation-duration: 500ms;
-      animation-name: json-node-children-open;
-      transform-origin: top;
-    }
-
-    .json-node-stub-toggler .json-node-label {
-      color: #7f7f7f;
-    }
-
-    @keyframes json-node-children-open {
-      from {
-        transform: scaleY(0);
-      }
-      to {
-        transform: scaleY(1);
-      }
-    }
-
-  </style>
+  <link rel="stylesheet" href="../styles/default.css">
+  <script src="demo.ts"></script>
 </head>
 <body>
 <h1>Big JSON Viewer Demo</h1>
@@ -122,10 +28,10 @@
       {name: 'special'},
       {},
     ],
-    element4: []
+    element4: [],
+    element5: "this should be some long text\nwith line break"
   };
-  const viewer = new BigJsonViewer(JSON.stringify(testData1), {});
-  const rootNode1 = viewer.getRootElement();
+  const rootNode1 = BigJsonViewer.elementFromData(JSON.stringify(testData1));
   document.getElementById('container1').appendChild(rootNode1);
 
   const list = new Array(210);
@@ -136,8 +42,7 @@
     }
   }
 
-  const viewer2 = new BigJsonViewer(JSON.stringify(list));
-  const rootNode2 = viewer2.getRootElement();
+  const rootNode2 = BigJsonViewer.elementFromData(JSON.stringify(list));
   document.getElementById('container2').appendChild(rootNode2);
 
   function openPath(rootNode) {

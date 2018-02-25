@@ -13,10 +13,25 @@ export interface JsonNodesStubElement extends HTMLDivElement {
   toggleNode();
 }
 
+export type PaginatedOption = 'first' | 'all' | 'none';
+
 export interface JsonNodeElement extends JsonNodesStubElement {
   jsonNode: JsonNodeInfo;
 
+  /**
+   * Opens the given path and returns if the path was found.
+   */
   openPath(path: string[]): boolean;
+
+  /**
+   * Opens all nodes with limits.
+   * maxDepth is Infinity by default.
+   * paginated is first by default. This opens only the first page.
+   * all, would open all pages.
+   * none would open no pages and just show the stubs.
+   * Returns the number of opened nodes.
+   */
+  openAll(maxDepth?: number, paginated?: PaginatedOption): number;
 }
 
 
@@ -40,6 +55,9 @@ export interface BigJsonViewerOptions {
    * @default false
    */
   labelAsPath?: boolean;
+
+  linkLabelCopyPath?: string;
+  linkLabelExpandAll?: string;
 }
 
 /**
@@ -52,7 +70,9 @@ export class BigJsonViewer {
   options: BigJsonViewerOptions = {
     objectNodesLimit: 50,
     arrayNodesLimit: 50,
-    labelAsPath: false
+    labelAsPath: false,
+    linkLabelCopyPath: 'Copy path',
+    linkLabelExpandAll: 'Expand all',
   };
 
   constructor(data: ArrayBuffer | string, options?: BigJsonViewerOptions) {
@@ -60,6 +80,16 @@ export class BigJsonViewer {
     if (options) {
       Object.assign(this.options, options);
     }
+  }
+
+  /**
+   * Returns an HTMLElement that displays the tree.
+   * It must be attached to DOM.
+   * Offers an API to open/close nodes.
+   */
+  static elementFromData(data: ArrayBuffer | string, options?: BigJsonViewerOptions): JsonNodeElement {
+    const viewer = new BigJsonViewer(data, options);
+    return viewer.getRootElement();
   }
 
   getRootElement(): JsonNodeElement {
@@ -116,6 +146,13 @@ export class BigJsonViewer {
         return this.openPath(nodeElement, node, path);
       }
       return false;
+    };
+
+    nodeElement.openAll = (maxDepth = Infinity, paginated = 'first'): number => {
+      if (this.isOpenableNode(node)) {
+        return this.openAll(nodeElement, maxDepth, paginated);
+      }
+      return 0;
     };
 
   }
@@ -229,6 +266,42 @@ export class BigJsonViewer {
       element = this.openKey(element, path[i]);
     }
     return true;
+  }
+
+  private openAll(nodeElement: JsonNodeElement, maxDepth: number, paginated: PaginatedOption): number {
+    nodeElement.openNode();
+    let opened = 1;
+    if (maxDepth <= 1 || !nodeElement.childrenElement) {
+      return opened;
+    }
+    const newMaxDepth = maxDepth === Infinity ? Infinity : maxDepth - 1;
+
+    opened += this.openAllChildren(nodeElement.childrenElement.children, newMaxDepth, paginated);
+
+    return opened;
+  }
+
+  private openAllChildren(children: HTMLCollection, maxDepth: number, paginated: PaginatedOption): number {
+    let opened = 0;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i] as JsonNodeElement;
+      if (child.jsonNode) { // is a node
+        opened += child.openAll(maxDepth, paginated);
+
+      } else if (child.openNode) { // is a stub
+        if (paginated === 'none') {
+          return opened;
+        }
+        child.openNode();
+        if (child.childrenElement) {
+          opened += this.openAllChildren(child.childrenElement.children, maxDepth, paginated);
+        }
+        if (paginated === 'first') {
+          return opened;
+        }
+      }
+    }
+    return opened;
   }
 
   private getPaginatedNodeChildren(node: JsonNodeInfo): HTMLDivElement {
@@ -405,17 +478,55 @@ export class BigJsonViewer {
   private generateValue(parent: HTMLElement, node: JsonNodeInfo) {
     const valueElement = document.createElement('span');
     valueElement.classList.add('json-node-value');
-    valueElement.appendChild(document.createTextNode(node.getValue()));
+    valueElement.appendChild(document.createTextNode(JSON.stringify(node.getValue())));
     parent.appendChild(valueElement);
   }
 
 
   private generateLinks(parent: HTMLElement, node: JsonNodeInfo) {
 
+    if (this.isOpenableNode(node)) {
+      const link = parent.appendChild(document.createElement('a'));
+      link.classList.add('json-node-link');
+      link.href = 'javascript:';
+      link.appendChild(document.createTextNode(this.options.linkLabelExpandAll));
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const nodeElement = this.findNodeElement(parent);
+        if (nodeElement) {
+          nodeElement.openAll();
+        }
+      });
+    }
+
+    if (node.path.length) {
+      const link = parent.appendChild(document.createElement('a'));
+      link.classList.add('json-node-link');
+      link.href = 'javascript:';
+      link.appendChild(document.createTextNode(this.options.linkLabelCopyPath));
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = node.path.join('.');
+        parent.appendChild(input);
+        input.select();
+        try {
+          if (!document.execCommand('copy')) {
+            console.warn('Unable to copy path to clipboard');
+          }
+        } catch (e) {
+          console.error('Unable to copy path to clipboard', e);
+        }
+        parent.removeChild(input);
+      });
+    }
+
+
   }
 
   private findNodeElement(el: HTMLElement): JsonNodeElement {
-    while (el && !el['isNodeOpen']) {
+    while (el && !el['jsonNode']) {
       el = el.parentElement;
     }
     return el as JsonNodeElement;

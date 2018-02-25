@@ -17,7 +17,6 @@
     }
   },
   "include": [
-    "index.ts",
     "src/**/*"
   ],
   "exclude": [
