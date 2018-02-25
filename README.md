@@ -10,12 +10,14 @@ The JSON data is held as ArrayBuffer and never parsed completely.
 
 Information about the top level nodes is provided. Pagination enabled browsing of arrays and objects.
 
+[Demo](https://dhcode.github.io/big-json-viewer/)
+
 
 ## Usage
 
     npm install big-json-viewer
 
-## Demo
+## Example usage
 
 test.ts
 ```typescript
