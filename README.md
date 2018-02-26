@@ -6,11 +6,13 @@
 
 A JavaScript library that enables efficient working with large JSON data in the browser.
 
-The JSON data is held as ArrayBuffer and never parsed completely.
+The JSON data is held as ArrayBuffer and only parsed for structural information.
 
 Information about the top level nodes is provided. Pagination enabled browsing of arrays and objects.
 
-[Demo](https://dhcode.github.io/big-json-viewer/)
+No dependencies, works directly on the DOM API. Runs in any modern browser and IE11.
+
+[View the Demo](https://dhcode.github.io/big-json-viewer/)
 
 
 ## Usage
@@ -91,9 +93,7 @@ The following events are being fired on the visible DOM elements. The events bub
 
 #### openNode
 
-Fires when a node is being opened. The target is a `JsonNodeElement`.
-
-Can fire very often when Expand all button is pressed, depending on the structure.
+Fires when a node is being opened by the user directly with a click. The target is a `JsonNodeElement`.
 
 Example logs the opened path:
 ```javascript
@@ -106,11 +106,13 @@ rootNode1.addEventListener('openNode', function(e) {
 
 Fires when a node is being closed. The target is a `JsonNodeElement`.
 
+#### openedNodes
+
+Fires when multiple nodes have been opened. Target is the top level `JsonNodeElement` that was used to trigger the action. E.g. when the user clicks the *Expand all* link.
+
 #### openStub
 
-Fires when a pagination stub is being opened. The target is a `JsonNodesStubElement`.
-
-Can fire very often when Expand all button is pressed, depending on the structure.
+Fires when a pagination stub is being opened directly by the user with a click. The target is a `JsonNodesStubElement`.
 
 #### closeStub
 
@@ -119,6 +121,14 @@ Fires when a pagination stub is being closed. The target is a `JsonNodesStubElem
 #### copyPath
 
 Fires when the user clicks on the Copy Path link of a node.
+
+
+## Future TODOs
+
+* Implement the search function
+* Improve display of large strings.
+* Run the parser in a WebWorker
+* Support JSON Schema. If provided show meta information from the schema definition.
 
 
 ## License

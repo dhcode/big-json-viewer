@@ -14,7 +14,57 @@ export interface JsonNodesStubElement extends HTMLDivElement {
   toggleNode();
 }
 
-export type PaginatedOption = 'first' | 'all' | 'none';
+export type BigJsonViewerEvent =
+  'openNode' // when the user opens a single node
+  | 'closeNode' // when the user closes a node
+  | 'openedNodes' // when multiple nodes were opened e.g. by expand all or search
+  | 'openStub' // when the user opens a single stub
+  | 'closeStub' // when the user closed a stub
+  | 'copyPath'; // when a path was copied
+
+export type PaginatedOption = 'first' // open only the first pagination stub
+  | 'all' // open all pagination stubs
+  | 'none'; // open no pagination stubs
+
+export type TreeSearchOption = 'first' // open the first match
+  | 'all' // open all matches
+  | number; // open first x matches
+
+export type TreeSearchAreaOption = 'all' // search in keys and values
+  | 'keys' // search only in keys
+  | 'values'; // search only in values
+
+export interface TreeSearchCursor {
+  /**
+   * Amount of matches found
+   */
+  length: number;
+
+  /**
+   * Currently focused match
+   */
+  index: number;
+
+  /**
+   * Matches represented by their paths
+   */
+  matches: string[][];
+
+  /**
+   * Navigate to the next match
+   */
+  next();
+
+  /**
+   * Navigate to the previous match
+   */
+  previous();
+
+  /**
+   * Navigate to the given match
+   */
+  navigateTo(index: string);
+}
 
 export interface JsonNodeElement extends JsonNodesStubElement {
   jsonNode: JsonNodeInfo;
@@ -39,6 +89,13 @@ export interface JsonNodeElement extends JsonNodesStubElement {
    * withsStubs is true by default, it makes sure, that opened stubs are represented
    */
   getOpenPaths(withStubs?: boolean): string[][];
+
+  /**
+   * Opens the tree nodes based on a pattern
+   * openBehavior is 'first' by default
+   * searchArea is 'all' by default
+   */
+  openBySearch(pattern: RegExp, openBehavior?: TreeSearchOption, searchArea?: TreeSearchAreaOption): TreeSearchCursor;
 }
 
 
@@ -143,7 +200,7 @@ export class BigJsonViewer {
     };
     nodeElement.openNode = () => {
       if (this.isOpenableNode(node)) {
-        this.openNode(nodeElement, node);
+        this.openNode(nodeElement);
       }
     };
     nodeElement.closeNode = () => {
@@ -180,15 +237,24 @@ export class BigJsonViewer {
       return [];
     };
 
+    nodeElement.openBySearch = (pattern: RegExp, openBehavior = 'first', searchArea = 'all'): TreeSearchCursor => {
+      return this.openBySearch(nodeElement, pattern, openBehavior, searchArea);
+    };
+
   }
 
   protected attachClickToggleListener(anchor: HTMLAnchorElement) {
     anchor.addEventListener('click', e => {
       e.preventDefault();
       const nodeElement = this.findNodeElement(anchor);
-      if (nodeElement) {
-        nodeElement.toggleNode();
+      if (nodeElement && this.isOpenableNode(nodeElement.jsonNode)) {
+        if (nodeElement.isNodeOpen()) {
+          this.closeNode(nodeElement, true);
+        } else {
+          this.openNode(nodeElement, true);
+        }
       }
+
     });
   }
 
@@ -196,7 +262,7 @@ export class BigJsonViewer {
     return (node.type === 'array' || node.type === 'object') && node.length;
   }
 
-  protected closeNode(nodeElement: JsonNodeElement) {
+  protected closeNode(nodeElement: JsonNodeElement, dispatchEvent = false) {
     if (!nodeElement.isNodeOpen()) {
       return;
     }
@@ -204,8 +270,16 @@ export class BigJsonViewer {
       nodeElement.headerElement.classList.remove('json-node-open');
       nodeElement.removeChild(nodeElement.childrenElement);
       nodeElement.childrenElement = null;
-      this.dispatchNodeEvent('closeNode', nodeElement);
+      if (dispatchEvent) {
+        this.dispatchNodeEvent('closeNode', nodeElement);
+      }
     }
+  }
+
+  protected openBySearch(nodeElement: JsonNodeElement, pattern: RegExp,
+                         openBehavior: TreeSearchOption, searchArea: TreeSearchAreaOption): TreeSearchCursor {
+    // TODO implement
+    return null;
   }
 
   protected getOpenPaths(nodeElement: JsonNodeElement, withSubs): string[][] {
@@ -242,21 +316,23 @@ export class BigJsonViewer {
     return result;
   }
 
-  protected openNode(nodeElement: JsonNodeElement, node: JsonNodeInfo) {
+  protected openNode(nodeElement: JsonNodeElement, dispatchEvent = false) {
     if (nodeElement.isNodeOpen()) {
       return;
     }
     nodeElement.headerElement.classList.add('json-node-open');
 
-    nodeElement.childrenElement = this.getPaginatedNodeChildren(node);
+    nodeElement.childrenElement = this.getPaginatedNodeChildren(nodeElement.jsonNode);
 
     nodeElement.appendChild(nodeElement.childrenElement);
 
-    this.dispatchNodeEvent('openNode', nodeElement);
+    if (dispatchEvent) {
+      this.dispatchNodeEvent('openNode', nodeElement);
+    }
 
   }
 
-  protected dispatchNodeEvent(type: string, nodeElement: JsonNodesStubElement) {
+  protected dispatchNodeEvent(type: BigJsonViewerEvent, nodeElement: JsonNodesStubElement) {
     let event: Event;
     if (document.createEvent) {
       event = document.createEvent('Event');
@@ -345,7 +421,7 @@ export class BigJsonViewer {
     return true;
   }
 
-  protected openAll(nodeElement: JsonNodeElement, maxDepth: number, paginated: PaginatedOption): number {
+  protected openAll(nodeElement: JsonNodeElement, maxDepth: number, paginated: PaginatedOption, dispatchEvent = false): number {
     nodeElement.openNode();
     let opened = 1;
     if (maxDepth <= 1 || !nodeElement.childrenElement) {
@@ -354,6 +430,10 @@ export class BigJsonViewer {
     const newMaxDepth = maxDepth === Infinity ? Infinity : maxDepth - 1;
 
     opened += this.openAllChildren(nodeElement.childrenElement.children, newMaxDepth, paginated);
+
+    if (dispatchEvent) {
+      this.dispatchNodeEvent('openedNodes', nodeElement);
+    }
 
     return opened;
   }
@@ -458,7 +538,11 @@ export class BigJsonViewer {
 
     anchor.addEventListener('click', e => {
       e.preventDefault();
-      stubElement.toggleNode();
+      if (stubElement.isNodeOpen()) {
+        this.closePaginationStub(stubElement, true);
+      } else {
+        this.openPaginationStub(stubElement, this.getChildNodes(node, start, limit), true);
+      }
     });
 
     stubElement.isNodeOpen = () => {
@@ -488,16 +572,18 @@ export class BigJsonViewer {
     return stubElement;
   }
 
-  protected closePaginationStub(stubElement: JsonNodesStubElement) {
+  protected closePaginationStub(stubElement: JsonNodesStubElement, dispatchEvent = false) {
     if (stubElement.childrenElement) {
       stubElement.headerElement.classList.remove('json-node-open');
       stubElement.removeChild(stubElement.childrenElement);
       stubElement.childrenElement = null;
-      this.dispatchNodeEvent('closeStub', stubElement);
+      if (dispatchEvent) {
+        this.dispatchNodeEvent('closeStub', stubElement);
+      }
     }
   }
 
-  protected openPaginationStub(stubElement: JsonNodesStubElement, nodes: JsonNodeInfo[]) {
+  protected openPaginationStub(stubElement: JsonNodesStubElement, nodes: JsonNodeInfo[], dispatchEvent = false) {
     stubElement.headerElement.classList.add('json-node-open');
     const children = document.createElement('div');
     children.classList.add('json-node-children');
@@ -506,8 +592,9 @@ export class BigJsonViewer {
       children.appendChild(this.getNodeElement(node));
     });
     stubElement.appendChild(children);
-
-    this.dispatchNodeEvent('openStub', stubElement);
+    if (dispatchEvent) {
+      this.dispatchNodeEvent('openStub', stubElement);
+    }
   }
 
   protected getNodeHeader(parent: HTMLElement, node: JsonNodeInfo) {
@@ -590,8 +677,8 @@ export class BigJsonViewer {
       link.addEventListener('click', e => {
         e.preventDefault();
         const nodeElement = this.findNodeElement(parent);
-        if (nodeElement) {
-          nodeElement.openAll();
+        if (nodeElement && this.isOpenableNode(nodeElement.jsonNode)) {
+          this.openAll(nodeElement, Infinity, 'first', true);
         }
       });
     }

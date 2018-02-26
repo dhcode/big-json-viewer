@@ -22,7 +22,7 @@ const demoData = {
     }
   },
   largeData: (function () {
-    const list = new Array(210);
+    const list = new Array(Math.floor(Math.random() * 1000));
     for (let i = 0; i < list.length; i++) {
       list[i] = Math.random();
       if (list[i] < 0.2) {
@@ -30,7 +30,7 @@ const demoData = {
       }
       if (list[i] > 0.8) {
         list[i] = {};
-        const entries = Math.floor(Math.random() * 300);
+        const entries = Math.floor(Math.random() * 1000);
         for (let j = 0; j < entries; j++) {
           list[i]['entry-' + j] = Math.random();
         }
@@ -96,10 +96,12 @@ function showData(data: string) {
 
 function setupRootNode() {
   const listener = e => {
+    console.log('event', e.type);
     showPaths();
   };
   rootNode.addEventListener('openNode', listener);
   rootNode.addEventListener('closeNode', listener);
+  rootNode.addEventListener('openedNodes', listener);
   rootNode.addEventListener('openStub', listener);
   rootNode.addEventListener('closeStub', listener);
   rootNode.addEventListener('copyPath', e => {
