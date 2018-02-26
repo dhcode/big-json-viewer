@@ -1,5 +1,6 @@
 import {JsonNodeInfo} from './json-node-info';
 import {BufferJsonParser} from './buffer-json-parser';
+import {forEachMatchFromString, searchJsonNodes, TreeSearchAreaOption, TreeSearchMatch} from './json-node-search';
 
 export interface JsonNodesStubElement extends HTMLDivElement {
   headerElement: HTMLElement;
@@ -26,20 +27,8 @@ export type PaginatedOption = 'first' // open only the first pagination stub
   | 'all' // open all pagination stubs
   | 'none'; // open no pagination stubs
 
-export type TreeSearchOption = 'first' // open the first match
-  | 'all' // open all matches
-  | number; // open first x matches
-
-export type TreeSearchAreaOption = 'all' // search in keys and values
-  | 'keys' // search only in keys
-  | 'values'; // search only in values
 
 export interface TreeSearchCursor {
-  /**
-   * Amount of matches found
-   */
-  length: number;
-
   /**
    * Currently focused match
    */
@@ -48,7 +37,7 @@ export interface TreeSearchCursor {
   /**
    * Matches represented by their paths
    */
-  matches: string[][];
+  matches: TreeSearchMatch[];
 
   /**
    * Navigate to the next match
@@ -63,16 +52,16 @@ export interface TreeSearchCursor {
   /**
    * Navigate to the given match
    */
-  navigateTo(index: string);
+  navigateTo(index: number);
 }
 
 export interface JsonNodeElement extends JsonNodesStubElement {
   jsonNode: JsonNodeInfo;
 
   /**
-   * Opens the given path and returns if the path was found.
+   * Opens the given path and returns the JsonNodeElement if the path was found.
    */
-  openPath(path: string[]): boolean;
+  openPath(path: string[]): JsonNodeElement;
 
   /**
    * Opens all nodes with limits.
@@ -92,10 +81,17 @@ export interface JsonNodeElement extends JsonNodesStubElement {
 
   /**
    * Opens the tree nodes based on a pattern
-   * openBehavior is 'first' by default
+   * openLimit is 1 by default, you can provide Infinity for all
    * searchArea is 'all' by default
+   * pattern should not have the g flag.
    */
-  openBySearch(pattern: RegExp, openBehavior?: TreeSearchOption, searchArea?: TreeSearchAreaOption): TreeSearchCursor;
+  openBySearch(pattern: RegExp, openLimit?: number, searchArea?: TreeSearchAreaOption): TreeSearchCursor;
+
+  /**
+   * Highlights all matches of the given pattern
+   * Provide null, to remove highlighting
+   */
+  highlight(pattern: RegExp);
 }
 
 
@@ -181,7 +177,7 @@ export class BigJsonViewer {
 
     element.jsonNode = node;
 
-    const header = this.getNodeHeader(element, node);
+    const header = this.getNodeHeader(node);
     element.appendChild(header);
     element.headerElement = header;
 
@@ -216,11 +212,11 @@ export class BigJsonViewer {
       }
     };
 
-    nodeElement.openPath = (path: string[]): boolean => {
+    nodeElement.openPath = (path: string[]): JsonNodeElement => {
       if (this.isOpenableNode(node)) {
-        return this.openPath(nodeElement, node, path);
+        return this.openPath(nodeElement, path, true);
       }
-      return false;
+      return null;
     };
 
     nodeElement.openAll = (maxDepth = Infinity, paginated = 'first'): number => {
@@ -237,8 +233,12 @@ export class BigJsonViewer {
       return [];
     };
 
-    nodeElement.openBySearch = (pattern: RegExp, openBehavior = 'first', searchArea = 'all'): TreeSearchCursor => {
-      return this.openBySearch(nodeElement, pattern, openBehavior, searchArea);
+    nodeElement.openBySearch = (pattern: RegExp, openLimit = 1, searchArea = 'all'): TreeSearchCursor => {
+      return this.openBySearch(nodeElement, pattern, openLimit, searchArea);
+    };
+
+    nodeElement.highlight = (pattern: RegExp) => {
+      this.highlightNode(nodeElement, pattern);
     };
 
   }
@@ -276,9 +276,85 @@ export class BigJsonViewer {
     }
   }
 
+  protected highlightNode(nodeElement: JsonNodeElement, pattern: RegExp) {
+    const header = this.getNodeHeader(nodeElement.jsonNode, pattern);
+    nodeElement.headerElement.parentElement.replaceChild(header, nodeElement.headerElement);
+  }
+
+  protected getHighlightedText(text: string, pattern: RegExp): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+    if (!pattern) {
+      fragment.appendChild(document.createTextNode(text));
+      return fragment;
+    }
+    let lastIndex = 0;
+    forEachMatchFromString(pattern, text, (index, length) => {
+      if (lastIndex < index) {
+        fragment.appendChild(document.createTextNode(text.substring(lastIndex, index)));
+      }
+      const mark = document.createElement('mark');
+      mark.appendChild(document.createTextNode(text.substr(index, length)));
+      fragment.appendChild(mark);
+      lastIndex = index + length;
+    });
+    if (lastIndex !== text.length) {
+      fragment.appendChild(document.createTextNode(text.substring(lastIndex, text.length)));
+    }
+    return fragment;
+  }
+
   protected openBySearch(nodeElement: JsonNodeElement, pattern: RegExp,
-                         openBehavior: TreeSearchOption, searchArea: TreeSearchAreaOption): TreeSearchCursor {
-    // TODO implement
+                         openLimit: number, searchArea: TreeSearchAreaOption): TreeSearchCursor {
+    if (!pattern) {
+      this.closeNode(nodeElement, true);
+      return null;
+    }
+    const viewer = this;
+
+    const matches = searchJsonNodes(nodeElement.jsonNode, pattern, searchArea);
+    const cursor: TreeSearchCursor = {
+      matches: matches,
+      index: 0,
+      navigateTo(index: number) {
+        this.index = index;
+        const openedElement = viewer.openSearchMatch(nodeElement, this.matches[index]);
+        if (openedElement) {
+          openedElement.highlight(pattern);
+          openedElement.scrollIntoView(false);
+        }
+      },
+      next() {
+        this.navigateTo(this.index + 1 >= this.matches.length ? 0 : this.index + 1);
+      },
+      previous() {
+        this.navigateTo(this.index - 1 < 0 ? this.matches.length : this.index - 1);
+      }
+    };
+
+    const length = Math.min(matches.length, openLimit);
+    for (let i = 0; i < length && i < openLimit; i++) {
+      const openedElement = this.openSearchMatch(nodeElement, matches[i]);
+      if (openedElement) {
+        openedElement.highlight(pattern);
+      }
+    }
+
+    this.dispatchNodeEvent('openedNodes', nodeElement);
+
+    return cursor;
+  }
+
+  protected openSearchMatch(nodeElement: JsonNodeElement, match: TreeSearchMatch): JsonNodeElement {
+    if (match.key !== undefined && match.path.length) {
+      if (match.path.length) {
+        const matchNodeElementParent = this.openPath(nodeElement, match.path.slice(0, -1)); // open the parent
+        if (matchNodeElementParent) {
+          return this.openKey(matchNodeElementParent, match.path[match.path.length - 1]); // ensure the key is visible
+        }
+      }
+    } else if (match.value !== undefined) {
+      return this.openPath(nodeElement, match.path);
+    }
     return null;
   }
 
@@ -322,7 +398,7 @@ export class BigJsonViewer {
     }
     nodeElement.headerElement.classList.add('json-node-open');
 
-    nodeElement.childrenElement = this.getPaginatedNodeChildren(nodeElement.jsonNode);
+    nodeElement.childrenElement = this.getPaginatedNodeChildren(nodeElement);
 
     nodeElement.appendChild(nodeElement.childrenElement);
 
@@ -399,26 +475,31 @@ export class BigJsonViewer {
       if (!childNodeElement.jsonNode) {
         return null;
       }
-      childNodeElement.openNode();
       return childNodeElement;
     }
     return null;
   }
 
-  protected openPath(nodeElement: JsonNodeElement, node: JsonNodeInfo, path: string[]): boolean {
+  protected openPath(nodeElement: JsonNodeElement, path: string[], dispatchEvent = false): JsonNodeElement {
     if (!path.length) {
-      nodeElement.openNode();
-      return true;
+      this.openNode(nodeElement, dispatchEvent);
+      return nodeElement;
     }
 
     let element = nodeElement;
     for (let i = 0; i < path.length; i++) {
       if (!element) {
-        return false;
+        return null;
       }
       element = this.openKey(element, path[i]);
+      if (element) {
+        element.openNode();
+      }
     }
-    return true;
+    if (dispatchEvent) {
+      this.dispatchNodeEvent('openedNodes', nodeElement);
+    }
+    return element;
   }
 
   protected openAll(nodeElement: JsonNodeElement, maxDepth: number, paginated: PaginatedOption, dispatchEvent = false): number {
@@ -488,7 +569,8 @@ export class BigJsonViewer {
     return result;
   }
 
-  protected getPaginatedNodeChildren(node: JsonNodeInfo): HTMLDivElement {
+  protected getPaginatedNodeChildren(nodeElement: JsonNodeElement): HTMLDivElement {
+    const node = nodeElement.jsonNode;
     const element = document.createElement('div');
     element.classList.add('json-node-children');
 
@@ -597,7 +679,7 @@ export class BigJsonViewer {
     }
   }
 
-  protected getNodeHeader(parent: HTMLElement, node: JsonNodeInfo) {
+  protected getNodeHeader(node: JsonNodeInfo, highlightPattern: RegExp = null) {
     const element = document.createElement('div');
     element.classList.add('json-node-header');
     element.classList.add('json-node-' + node.type);
@@ -610,12 +692,12 @@ export class BigJsonViewer {
         this.attachClickToggleListener(anchor);
         this.generateAccessor(anchor);
       }
-      this.generateLabel(anchor, node);
+      this.generateLabel(anchor, node, highlightPattern);
       this.generateTypeInfo(anchor, node);
       element.appendChild(anchor);
     } else {
-      this.generateLabel(element, node);
-      this.generateValue(element, node);
+      this.generateLabel(element, node, highlightPattern);
+      this.generateValue(element, node, highlightPattern);
       this.generateTypeInfo(element, node);
     }
 
@@ -644,25 +726,25 @@ export class BigJsonViewer {
 
   }
 
-  protected generateLabel(parent: HTMLElement, node: JsonNodeInfo) {
+  protected generateLabel(parent: HTMLElement, node: JsonNodeInfo, highlightPattern: RegExp) {
     if (!node.path.length) {
       return;
     }
     const label = document.createElement('span');
     label.classList.add('json-node-label');
     if (this.options.labelAsPath) {
-      label.appendChild(document.createTextNode(node.path.join('.')));
+      label.appendChild(this.getHighlightedText(node.path.join('.'), highlightPattern));
     } else {
-      label.appendChild(document.createTextNode(node.path[node.path.length - 1]));
+      label.appendChild(this.getHighlightedText(node.path[node.path.length - 1], highlightPattern));
     }
     parent.appendChild(label);
     parent.appendChild(document.createTextNode(': '));
   }
 
-  protected generateValue(parent: HTMLElement, node: JsonNodeInfo) {
+  protected generateValue(parent: HTMLElement, node: JsonNodeInfo, highlightPattern: RegExp) {
     const valueElement = document.createElement('span');
     valueElement.classList.add('json-node-value');
-    valueElement.appendChild(document.createTextNode(JSON.stringify(node.getValue())));
+    valueElement.appendChild(this.getHighlightedText(JSON.stringify(node.getValue()), highlightPattern));
     parent.appendChild(valueElement);
   }
 

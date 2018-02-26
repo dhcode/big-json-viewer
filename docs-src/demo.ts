@@ -45,6 +45,8 @@ const codeElement = document.getElementById('code') as HTMLTextAreaElement;
 const viewerElement = document.getElementById('viewer') as HTMLDivElement;
 const pathsElement = document.getElementById('paths') as HTMLTextAreaElement;
 const copiedElement = document.getElementById('copied') as HTMLInputElement;
+const searchElement = document.getElementById('search') as HTMLInputElement;
+const searchInfoElement = document.getElementById('searchInfo') as HTMLSpanElement;
 let rootNode = document.getElementById('rootNode') as JsonNodeElement;
 
 Array.from(document.querySelectorAll('[data-load]')).forEach((link: any) => {
@@ -61,6 +63,33 @@ Array.from(document.querySelectorAll('[data-load]')).forEach((link: any) => {
 codeElement.addEventListener('input', e => {
   console.log('show data based on input');
   showData(codeElement.value);
+});
+searchElement.addEventListener('input', e => {
+  rootNode.closeNode();
+  if (searchElement.value.length >= 2) {
+    const cursor = rootNode.openBySearch(new RegExp(searchElement.value, 'i'));
+    searchInfoElement.textContent = cursor.matches.length + ' matches';
+
+    const prevBtn = searchInfoElement.appendChild(document.createElement('a'));
+    prevBtn.href = 'javascript:';
+    prevBtn.addEventListener('click', e => {
+      e.preventDefault();
+      cursor.previous();
+    });
+    prevBtn.textContent = 'Prev';
+
+    const nextBtn = searchInfoElement.appendChild(document.createElement('a'));
+    nextBtn.href = 'javascript:';
+    nextBtn.addEventListener('click', e => {
+      e.preventDefault();
+      cursor.next();
+    });
+    nextBtn.textContent = 'Next';
+  } else {
+    rootNode.openBySearch(null);
+    searchInfoElement.textContent = '';
+  }
+
 });
 
 

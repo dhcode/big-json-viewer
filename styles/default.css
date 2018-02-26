@@ -19,6 +19,11 @@
   padding-left: 1em;
 }
 
+.json-node-header mark {
+  background-color: rgba(199, 193, 0, 0.5);
+  padding: 0;
+}
+
 .json-node-label {
   padding-left: 0.5em;
   color: #184183;
