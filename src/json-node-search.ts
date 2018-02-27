@@ -11,7 +11,8 @@ export interface TreeSearchMatch {
   length: number; // length of the match
 }
 
-export function searchJsonNodes(node: JsonNodeInfo, pattern: RegExp, searchArea: TreeSearchAreaOption): TreeSearchMatch[] {
+export function searchJsonNodes(node: JsonNodeInfo, pattern: RegExp, searchArea: TreeSearchAreaOption = 'all'): TreeSearchMatch[] {
+  pattern = ensureGlobal(pattern);
   const results: TreeSearchMatch[] = [];
   if (node.path.length && (searchArea === 'all' || searchArea === 'keys')) {
     forEachMatchFromString(pattern, node.path[node.path.length - 1], (index, length) => {
@@ -36,9 +37,19 @@ export function searchJsonNodes(node: JsonNodeInfo, pattern: RegExp, searchArea:
 }
 
 export function forEachMatchFromString(pattern: RegExp, subject: string, callback: (i: number, length: number) => void) {
-  const iterPattern = new RegExp(pattern, 'g');
+  pattern = ensureGlobal(pattern);
+  pattern.lastIndex = 0;
   let match = null;
-  while ((match = iterPattern.exec(subject)) !== null) {
+  while ((match = pattern.exec(subject)) !== null) {
     callback(match.index, match[0].length);
   }
+  pattern.lastIndex = 0;
+}
+
+function ensureGlobal(pattern: RegExp): RegExp {
+  if (!pattern.global) {
+    const flags = 'g' + (pattern.ignoreCase ? 'i' : '') + (pattern.multiline ? 'm' : '');
+    return new RegExp(pattern.source, flags);
+  }
+  return pattern;
 }

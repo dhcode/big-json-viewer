@@ -62,16 +62,6 @@ BigJsonViewer.elementFromData(data: ArrayBuffer | string, options?: BigJsonViewe
     
 It returns a `JsonNodeElement` object, that is an `HTMLDivElement` with some extras. You can insert it anywhere in your DOM.
 
-You can also call some special methods on it like:
-
-```typescript
-node.openNode() // opens the root node, if it is an object or array
-node.closeNode() // closes the node
-node.toggleNode() // toggles the both above
-node.openPath(path: string[]): boolean // opens the provided path and returns true, if the given path was found
-node.openAll(maxDepth?: number, paginated?: PaginatedOption): number // opens all node under the given constraints
-node.getOpenPaths(withStubs?: boolean): string[][] // gets a list of paths that are opened
-```
 
 ## Options
 
@@ -87,7 +77,63 @@ Example:
 }
 ```
 
-## Events
+## API
+
+## `JsonNodeElement` methods
+
+
+#### `openNode()`
+
+Opens the node in case it is an openable node. No event is fired.
+
+
+#### `closeNode()`
+
+Closes the node in case it is open. No event is fired.
+
+
+#### `toggleNode()`
+
+Toggles the open state of the node. Either opens or closes it. No event is fired.
+
+
+#### `openPath(path: string[]): JsonNodeElement`
+
+Opens the specified path and returns the opened node, in case it was found.
+
+
+#### `openAll(maxDepth?: number, paginated?: PaginatedOption): number`
+
+Opens all nodes until the defined depth. Returns the number of opened nodes.
+
+* `maxDepth` is `Infinity` by default
+* `paginated` is a string of the following options
+    * `'first'` open only the first pagination stub (default)
+    * `'all'` open all pagination stubs
+    * `'none'` open no pagination stubs
+
+
+#### `getOpenPaths(withStubs?: boolean): string[][]`
+
+Returns a list of opened paths.
+`withStubs` is `true` by default. It makes sure, that paginated stubs that are opened are considered.
+
+When you have a limit of 50 nodes and you open the second stub `[50 ... 99]`, a path it retuned that contains the name of the first node in the stub. 
+
+
+#### `openBySearch(pattern: RegExp, openLimit?: number, searchArea?: TreeSearchAreaOption): TreeSearchCursor;`
+
+Searches the tree by the specified `pattern` and `searchArea`. Returns a `TreeSearchCursor`, which contains all matches and methods to jump the focus between the matches.
+
+* `openLimit` is `1` by default. But can be `Infinity` or any number.
+* `searchArea` describes where the pattern should be searched. Has the following options:
+    * `'all'` search in keys and values (default)
+    * `'keys'` search only in keys
+    * `'values'` search only in values
+
+
+
+### `JsonNodeElement` Events
 
 The following events are being fired on the visible DOM elements. The events bubble up, so you just need a listener to your root element.
 

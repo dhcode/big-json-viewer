@@ -49,7 +49,8 @@ const searchElement = document.getElementById('search') as HTMLInputElement;
 const searchInfoElement = document.getElementById('searchInfo') as HTMLSpanElement;
 let rootNode = document.getElementById('rootNode') as JsonNodeElement;
 
-Array.from(document.querySelectorAll('[data-load]')).forEach((link: any) => {
+
+querySelectorArray('[data-load]').forEach((link: any) => {
   const load = link.getAttribute('data-load');
   if (demoData[load] && !link.loadListener) {
     link.loadListener = true;
@@ -146,4 +147,13 @@ function showPaths() {
 
   pathsElement.value = rootNode.getOpenPaths().map(path => path.join('.')).join('\n');
 
+}
+
+function querySelectorArray(selector: string) {
+  const list = document.querySelectorAll(selector);
+  const result = [];
+  for (let i = 0; i < list.length; i++) {
+    result.push(list[i]);
+  }
+  return result;
 }

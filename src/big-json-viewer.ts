@@ -87,11 +87,6 @@ export interface JsonNodeElement extends JsonNodesStubElement {
    */
   openBySearch(pattern: RegExp, openLimit?: number, searchArea?: TreeSearchAreaOption): TreeSearchCursor;
 
-  /**
-   * Highlights all matches of the given pattern
-   * Provide null, to remove highlighting
-   */
-  highlight(pattern: RegExp);
 }
 
 
@@ -178,8 +173,7 @@ export class BigJsonViewer {
     element.jsonNode = node;
 
     const header = this.getNodeHeader(node);
-    element.appendChild(header);
-    element.headerElement = header;
+    element.headerElement = element.appendChild(header);
 
     this.attachInteractivity(element, node);
 
@@ -237,10 +231,6 @@ export class BigJsonViewer {
       return this.openBySearch(nodeElement, pattern, openLimit, searchArea);
     };
 
-    nodeElement.highlight = (pattern: RegExp) => {
-      this.highlightNode(nodeElement, pattern);
-    };
-
   }
 
   protected attachClickToggleListener(anchor: HTMLAnchorElement) {
@@ -279,6 +269,7 @@ export class BigJsonViewer {
   protected highlightNode(nodeElement: JsonNodeElement, pattern: RegExp) {
     const header = this.getNodeHeader(nodeElement.jsonNode, pattern);
     nodeElement.headerElement.parentElement.replaceChild(header, nodeElement.headerElement);
+    nodeElement.headerElement = header;
   }
 
   protected getHighlightedText(text: string, pattern: RegExp): DocumentFragment {
@@ -319,7 +310,7 @@ export class BigJsonViewer {
         this.index = index;
         const openedElement = viewer.openSearchMatch(nodeElement, this.matches[index]);
         if (openedElement) {
-          openedElement.highlight(pattern);
+          viewer.highlightNode(openedElement, pattern);
           openedElement.scrollIntoView(false);
         }
       },
@@ -335,7 +326,7 @@ export class BigJsonViewer {
     for (let i = 0; i < length && i < openLimit; i++) {
       const openedElement = this.openSearchMatch(nodeElement, matches[i]);
       if (openedElement) {
-        openedElement.highlight(pattern);
+        viewer.highlightNode(openedElement, pattern);
       }
     }
 
@@ -398,9 +389,9 @@ export class BigJsonViewer {
     }
     nodeElement.headerElement.classList.add('json-node-open');
 
-    nodeElement.childrenElement = this.getPaginatedNodeChildren(nodeElement);
+    const children = this.getPaginatedNodeChildren(nodeElement);
 
-    nodeElement.appendChild(nodeElement.childrenElement);
+    nodeElement.childrenElement = nodeElement.appendChild(children);
 
     if (dispatchEvent) {
       this.dispatchNodeEvent('openNode', nodeElement);

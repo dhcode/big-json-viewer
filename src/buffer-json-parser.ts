@@ -21,9 +21,11 @@ const PLUS = '+'.charCodeAt(0);
 const DOT = '.'.charCodeAt(0);
 const CHAR_E_LOW = 'e'.charCodeAt(0);
 const CHAR_E_HIGH = 'E'.charCodeAt(0);
+const DIGIT_0 = '0'.charCodeAt(0);
+const DIGIT_9 = '9'.charCodeAt(0);
 
 const IGNORED = [SPACE, TAB, NEWLINE, CARRIAGE_RETURN];
-const DIGIT = '0123456789'.split('').map(d => d.charCodeAt(0));
+
 const NULL = 'null'.split('').map(d => d.charCodeAt(0));
 const TRUE = 'true'.split('').map(d => d.charCodeAt(0));
 const FALSE = 'false'.split('').map(d => d.charCodeAt(0));
@@ -183,8 +185,6 @@ export class BufferJsonNodeInfo implements JsonNodeInfo {
 }
 
 
-
-
 declare const TextEncoder;
 
 /**
@@ -254,7 +254,7 @@ export class BufferJsonParser {
     }
 
     function isNumber(char) {
-      return char === MINUS || DIGIT.indexOf(char) !== -1;
+      return char === MINUS || char >= DIGIT_0 && char <= DIGIT_9;
     }
   }
 
@@ -457,8 +457,8 @@ export class BufferJsonParser {
   }
 
   private parseDigits(start: number): number {
-    for (; DIGIT.indexOf(this.data[start]) !== -1; start++) {
-
+    while (this.data[start] >= DIGIT_0 && this.data[start] <= DIGIT_9) {
+      start++;
     }
     return start;
   }
