@@ -171,6 +171,7 @@ Fires when the user clicks on the Copy Path link of a node.
 
 ## Future TODOs
 
+* Fix highlight all on search and not only the first
 * Improve display of large strings.
 * Run the parser in a WebWorker
 * Support JSON Schema. If provided show meta information from the schema definition.

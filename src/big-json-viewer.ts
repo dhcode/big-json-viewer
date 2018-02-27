@@ -303,15 +303,24 @@ export class BigJsonViewer {
     const viewer = this;
 
     const matches = searchJsonNodes(nodeElement.jsonNode, pattern, searchArea);
+    let activeMark = null;
     const cursor: TreeSearchCursor = {
       matches: matches,
       index: 0,
       navigateTo(index: number) {
         this.index = index;
+        const match = this.matches[index];
         const openedElement = viewer.openSearchMatch(nodeElement, this.matches[index]);
         if (openedElement) {
           viewer.highlightNode(openedElement, pattern);
           openedElement.scrollIntoView(false);
+          if (activeMark) {
+            activeMark.classList.remove('highlight-active');
+          }
+          activeMark = viewer.findMarkForMatch(openedElement, match);
+          if (activeMark) {
+            activeMark.classList.add('highlight-active');
+          }
         }
       },
       next() {
@@ -332,7 +341,43 @@ export class BigJsonViewer {
 
     this.dispatchNodeEvent('openedNodes', nodeElement);
 
+    cursor.navigateTo(0);
+
     return cursor;
+  }
+
+  protected findMarkForMatch(nodeElement: JsonNodeElement, match: TreeSearchMatch): HTMLElement {
+    let children = null, expectIndex = 0;
+    if (match.key !== undefined) {
+      const label = nodeElement.headerElement.querySelector('.json-node-label');
+      if (label) {
+        children = label.childNodes;
+        expectIndex = match.key;
+      }
+    }
+
+    if (match.value !== undefined) {
+      const value = nodeElement.headerElement.querySelector('.json-node-value');
+      if (value) {
+        children = value.childNodes;
+        expectIndex = match.value;
+      }
+    }
+
+    if (children) {
+      let index = nodeElement.jsonNode.type === 'string' ? -1 : 0;
+      for (let i = 0; i < children.length; i++) {
+        const cn = children[i];
+        if (cn.nodeType === Node.TEXT_NODE) {
+          index += cn.textContent.length;
+        }
+        if (cn.nodeType === Node.ELEMENT_NODE && (cn as HTMLElement).tagName === 'MARK' && expectIndex === index) {
+          return cn as HTMLElement;
+        }
+      }
+    }
+
+    return null;
   }
 
   protected openSearchMatch(nodeElement: JsonNodeElement, match: TreeSearchMatch): JsonNodeElement {
@@ -723,11 +768,15 @@ export class BigJsonViewer {
     }
     const label = document.createElement('span');
     label.classList.add('json-node-label');
-    if (this.options.labelAsPath) {
-      label.appendChild(this.getHighlightedText(node.path.join('.'), highlightPattern));
-    } else {
-      label.appendChild(this.getHighlightedText(node.path[node.path.length - 1], highlightPattern));
+    if (this.options.labelAsPath && node.path.length > 1) {
+      const prefix = document.createElement('span');
+      prefix.classList.add('json-node-label-prefix');
+      prefix.appendChild(document.createTextNode(node.path.slice(0, node.path.length - 1).join('.') + '.'));
+      label.appendChild(prefix);
     }
+
+    label.appendChild(this.getHighlightedText(node.path[node.path.length - 1], highlightPattern));
+
     parent.appendChild(label);
     parent.appendChild(document.createTextNode(': '));
   }

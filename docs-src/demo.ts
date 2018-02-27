@@ -71,6 +71,8 @@ searchElement.addEventListener('input', e => {
     const cursor = rootNode.openBySearch(new RegExp(searchElement.value, 'i'));
     searchInfoElement.textContent = cursor.matches.length + ' matches';
 
+    searchInfoElement.appendChild(document.createTextNode(' '));
+
     const prevBtn = searchInfoElement.appendChild(document.createElement('a'));
     prevBtn.href = 'javascript:';
     prevBtn.addEventListener('click', e => {
@@ -78,6 +80,8 @@ searchElement.addEventListener('input', e => {
       cursor.previous();
     });
     prevBtn.textContent = 'Prev';
+
+    searchInfoElement.appendChild(document.createTextNode(' '));
 
     const nextBtn = searchInfoElement.appendChild(document.createElement('a'));
     nextBtn.href = 'javascript:';
