@@ -313,7 +313,7 @@ export class BigJsonViewer {
         const openedElement = viewer.openSearchMatch(nodeElement, this.matches[index]);
         if (openedElement) {
           viewer.highlightNode(openedElement, pattern);
-          openedElement.scrollIntoView(false);
+          openedElement.scrollIntoView({block: 'center'});
           if (activeMark) {
             activeMark.classList.remove('highlight-active');
           }

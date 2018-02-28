@@ -9,6 +9,7 @@
     "preversion": "tsc",
     "build-docs": "parcel build docs-src/index.html --out-dir docs --public-url ./",
     "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp",
+    "build-worker": "parcel build src/worker/json-parser.worker.ts --out-dir dist/worker --no-minify",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "karma": "karma start",
     "test": "karma start --single-run --browsers ChromeHeadless",

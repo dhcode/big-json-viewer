@@ -306,7 +306,7 @@ describe('JSON Parser', function () {
     expectStringNode(node, 'D', 3, ['a', 'b', 'd']);
 
     expect(info.getByPath('a.b.e'.split('.'))).toBeUndefined();
-    expect(info.getByPath([])).toBeUndefined();
+    expect(info.getByPath([])).toEqual(info);
 
 
   });

@@ -124,8 +124,11 @@ export class BufferJsonNodeInfo implements JsonNodeInfo {
    * @returns {BufferJsonNodeInfo}
    */
   public getByPath(path: string[]): BufferJsonNodeInfo {
-    if (!path || !path.length) {
+    if (!path) {
       return undefined;
+    }
+    if (!path.length) {
+      return this;
     }
     const p = path.slice();
     let key: string;

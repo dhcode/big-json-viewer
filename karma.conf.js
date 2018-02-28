@@ -22,8 +22,7 @@ module.exports = function (config) {
         sourceMap: true,
         target: "es5",
         lib: ["dom", "es5", "es6"]
-      },
-      tsconfig: path.resolve(__dirname, 'tsconfig.json')
+      }
     }
   });
 };
