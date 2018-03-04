@@ -16,10 +16,9 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/worker/**/*"
   ],
   "exclude": [
-    "src/**/*.spec.ts",
-    "src/worker"
+    "src/worker/**/*.spec.ts"
   ]
 }

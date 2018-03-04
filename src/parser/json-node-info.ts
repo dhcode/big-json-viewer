@@ -1,10 +1,9 @@
-
 export type NodeType = 'string' | 'number' | 'array' | 'object' | 'boolean' | 'null';
 
 export interface JsonNodeInfoBase {
-  type: NodeType;
-  path: string[];
-  length?: number; // in case of array, object, string
+  readonly type: NodeType;
+  readonly path: string[];
+  readonly length?: number; // in case of array, object, string
 }
 
 export interface JsonNodeInfo extends JsonNodeInfoBase {
@@ -104,4 +103,54 @@ export interface AsyncJsonNodeInfo extends JsonNodeInfoBase {
    * Get the natively parsed value
    */
   getValue(): Promise<any>;
+}
+
+export interface ClosableJsonNodeInfo extends AsyncJsonNodeInfo {
+  close();
+}
+
+export class AsyncJsonNodeInfoProxy implements AsyncJsonNodeInfo {
+  type: NodeType;
+  path: string[];
+  length?: number;
+
+  constructor(private nodeInfo: JsonNodeInfo) {
+    this.type = this.nodeInfo.type;
+    this.path = this.nodeInfo.path;
+    this.length = this.nodeInfo.length;
+  }
+
+  getObjectKeys(start?: number, limit?: number): Promise<string[]> {
+    return this.promiseCall('getObjectKeys', start, limit);
+  }
+
+  getByIndex(index: number): Promise<AsyncJsonNodeInfo> {
+    return this.promiseCall('getByIndex', index);
+  }
+
+  getByKey(key: string): Promise<AsyncJsonNodeInfo> {
+    return this.promiseCall('getByKey', key);
+  }
+
+  getByPath(path: string[]): Promise<AsyncJsonNodeInfo> {
+    return this.promiseCall('getByPath', path);
+  }
+
+  getObjectNodes(start?: number, limit?: number): Promise<AsyncJsonNodeInfo[]> {
+    return this.promiseCall('getObjectNodes', start, limit);
+  }
+
+  getArrayNodes(start?: number, limit?: number): Promise<AsyncJsonNodeInfo[]> {
+    return this.promiseCall('getArrayNodes', start, limit);
+  }
+
+  getValue(): Promise<any> {
+    return this.promiseCall('getValue');
+  }
+
+  private promiseCall(method, ...args): Promise<any> {
+    return new Promise(resolve => {
+      resolve(this.nodeInfo[method].apply(this.nodeInfo, args));
+    });
+  }
 }

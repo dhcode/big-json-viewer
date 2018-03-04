@@ -1,5 +1,5 @@
-import {JsonNodeInfo} from '../json-node-info';
-import {BufferJsonParser} from '../buffer-json-parser';
+import {JsonNodeInfo} from '../parser/json-node-info';
+import {BufferJsonParser} from '../parser/buffer-json-parser';
 
 declare interface DedicatedWorkerGlobalScope {
   onmessage: (this: DedicatedWorkerGlobalScope, ev: MessageEvent) => any;
@@ -56,14 +56,12 @@ class JsonParserWorker {
     };
   }
 
-  closeParser(key: string) {
+  callParser(key: string, path: string[], method: string, args?: any[]): any {
     if (this.rootNodes[key]) {
-      delete this.rootNodes[key];
-    }
-  }
-
-  callParser(key: string, path: string[], method: string, args?: any[]) {
-    if (this.rootNodes[key]) {
+      if (method === 'closeParser') {
+        delete this.rootNodes[key];
+        return;
+      }
       const rootNode = this.rootNodes[key];
       const targetNode = rootNode.getByPath(path);
       if (!targetNode) {

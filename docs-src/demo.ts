@@ -1,4 +1,4 @@
-import {BigJsonViewer, BufferJsonParser, JsonNodeElement} from '../src';
+import {BigJsonViewer, JsonNodeElement, parseWithWorker} from '../src';
 
 const demoData = {
   simpleData: {
@@ -125,6 +125,15 @@ function showData(data: string) {
     errEl.appendChild(document.createTextNode(e.toString()));
     viewerElement.appendChild(errEl);
   }
+
+  parseWithWorker(data)
+    .then(info => {
+      console.log('async info', info);
+      return info.getObjectNodes();
+    })
+    .then(nodes => {
+      console.log('async object nodes', nodes);
+    });
 
 }
 

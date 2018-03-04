@@ -1,6 +1,6 @@
-import {JsonNodeInfo} from './json-node-info';
-import {BufferJsonParser} from './buffer-json-parser';
-import {forEachMatchFromString, searchJsonNodes, TreeSearchAreaOption, TreeSearchMatch} from './json-node-search';
+import {JsonNodeInfo} from './parser/json-node-info';
+import {BufferJsonParser} from './parser/buffer-json-parser';
+import {forEachMatchFromString, searchJsonNodes, TreeSearchAreaOption, TreeSearchMatch} from './parser/json-node-search';
 
 export interface JsonNodesStubElement extends HTMLDivElement {
   headerElement: HTMLElement;

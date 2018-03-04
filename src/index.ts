@@ -1,3 +1,4 @@
 export * from './big-json-viewer';
-export * from './json-node-info';
-export * from './buffer-json-parser';
+export * from './parser/json-node-info';
+export * from './parser/buffer-json-parser';
+export * from './worker-client';
