@@ -105,10 +105,6 @@ export interface AsyncJsonNodeInfo extends JsonNodeInfoBase {
   getValue(): Promise<any>;
 }
 
-export interface ClosableJsonNodeInfo extends AsyncJsonNodeInfo {
-  close();
-}
-
 export class AsyncJsonNodeInfoProxy implements AsyncJsonNodeInfo {
   type: NodeType;
   path: string[];

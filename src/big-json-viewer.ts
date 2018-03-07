@@ -1,6 +1,7 @@
-import {JsonNodeInfo} from './parser/json-node-info';
+import {AsyncJsonNodeInfo, JsonNodeInfo} from './parser/json-node-info';
 import {BufferJsonParser} from './parser/buffer-json-parser';
 import {forEachMatchFromString, searchJsonNodes, TreeSearchAreaOption, TreeSearchMatch} from './parser/json-node-search';
+import {parseWithWorker, WorkerJsonNodeInfo} from './worker-client';
 
 export interface JsonNodesStubElement extends HTMLDivElement {
   headerElement: HTMLElement;
@@ -8,11 +9,11 @@ export interface JsonNodesStubElement extends HTMLDivElement {
 
   isNodeOpen(): boolean;
 
-  openNode();
+  openNode(): Promise<boolean>;
 
-  closeNode();
+  closeNode(): Promise<boolean>;
 
-  toggleNode();
+  toggleNode(): Promise<boolean>;
 }
 
 export type BigJsonViewerEvent =
@@ -56,12 +57,12 @@ export interface TreeSearchCursor {
 }
 
 export interface JsonNodeElement extends JsonNodesStubElement {
-  jsonNode: JsonNodeInfo;
+  jsonNode: AsyncJsonNodeInfo;
 
   /**
    * Opens the given path and returns the JsonNodeElement if the path was found.
    */
-  openPath(path: string[]): JsonNodeElement;
+  openPath(path: string[]): Promise<JsonNodeElement>;
 
   /**
    * Opens all nodes with limits.
@@ -71,7 +72,7 @@ export interface JsonNodeElement extends JsonNodesStubElement {
    * none would open no pages and just show the stubs.
    * Returns the number of opened nodes.
    */
-  openAll(maxDepth?: number, paginated?: PaginatedOption): number;
+  openAll(maxDepth?: number, paginated?: PaginatedOption): Promise<number>;
 
   /**
    * Get a list of all opened paths
@@ -85,7 +86,7 @@ export interface JsonNodeElement extends JsonNodesStubElement {
    * searchArea is 'all' by default
    * pattern should not have the g flag.
    */
-  openBySearch(pattern: RegExp, openLimit?: number, searchArea?: TreeSearchAreaOption): TreeSearchCursor;
+  openBySearch(pattern: RegExp, openLimit?: number, searchArea?: TreeSearchAreaOption): Promise<TreeSearchCursor>;
 
 }
 
@@ -129,7 +130,7 @@ export interface BigJsonViewerOptions {
  */
 export class BigJsonViewer {
 
-  rootNode: JsonNodeInfo;
+  rootNode: WorkerJsonNodeInfo;
 
   options: BigJsonViewerOptions = {
     objectNodesLimit: 50,
@@ -139,7 +140,7 @@ export class BigJsonViewer {
     linkLabelExpandAll: 'Expand all',
   };
 
-  constructor(rootNode: JsonNodeInfo, options?: BigJsonViewerOptions) {
+  constructor(rootNode: WorkerJsonNodeInfo, options?: BigJsonViewerOptions) {
     this.rootNode = rootNode;
     if (options) {
       Object.assign(this.options, options);
@@ -151,8 +152,8 @@ export class BigJsonViewer {
    * It must be attached to DOM.
    * Offers an API to open/close nodes.
    */
-  static elementFromData(data: ArrayBuffer | string, options?: BigJsonViewerOptions): JsonNodeElement {
-    const rootNode = new BufferJsonParser(data).getRootNodeInfo();
+  static async elementFromData(data: ArrayBuffer | string, options?: BigJsonViewerOptions): Promise<JsonNodeElement> {
+    const rootNode = await parseWithWorker(data);
     const viewer = new BigJsonViewer(rootNode, options);
     return viewer.getRootElement();
   }
@@ -166,7 +167,7 @@ export class BigJsonViewer {
     return null;
   }
 
-  getNodeElement(node: JsonNodeInfo): JsonNodeElement {
+  getNodeElement(node: AsyncJsonNodeInfo): JsonNodeElement {
     const element = document.createElement('div') as JsonNodeElement;
     element.classList.add('json-node');
 
@@ -180,7 +181,7 @@ export class BigJsonViewer {
     return element;
   }
 
-  protected attachInteractivity(nodeElement: JsonNodeElement, node: JsonNodeInfo) {
+  protected attachInteractivity(nodeElement: JsonNodeElement, node: AsyncJsonNodeInfo) {
 
     nodeElement.isNodeOpen = (): boolean => {
       if (this.isOpenableNode(node)) {
@@ -188,36 +189,38 @@ export class BigJsonViewer {
       }
       return false;
     };
-    nodeElement.openNode = () => {
+    nodeElement.openNode = (): Promise<boolean> => {
       if (this.isOpenableNode(node)) {
-        this.openNode(nodeElement);
+        return this.openNode(nodeElement);
       }
+      return Promise.resolve(false);
     };
-    nodeElement.closeNode = () => {
+    nodeElement.closeNode = (): Promise<boolean> => {
       if (this.isOpenableNode(node)) {
-        this.closeNode(nodeElement);
+        return this.closeNode(nodeElement);
       }
+      return Promise.resolve(false);
     };
-    nodeElement.toggleNode = () => {
+    nodeElement.toggleNode = (): Promise<boolean> => {
       if (nodeElement.isNodeOpen()) {
-        nodeElement.closeNode();
+        return nodeElement.closeNode();
       } else {
-        nodeElement.openNode();
+        return nodeElement.openNode();
       }
     };
 
-    nodeElement.openPath = (path: string[]): JsonNodeElement => {
+    nodeElement.openPath = (path: string[]): Promise<JsonNodeElement> => {
       if (this.isOpenableNode(node)) {
         return this.openPath(nodeElement, path, true);
       }
       return null;
     };
 
-    nodeElement.openAll = (maxDepth = Infinity, paginated = 'first'): number => {
+    nodeElement.openAll = (maxDepth = Infinity, paginated = 'first'): Promise<number> => {
       if (this.isOpenableNode(node)) {
         return this.openAll(nodeElement, maxDepth, paginated);
       }
-      return 0;
+      return Promise.resolve(0);
     };
 
     nodeElement.getOpenPaths = (withStubs = true): string[][] => {
@@ -227,7 +230,7 @@ export class BigJsonViewer {
       return [];
     };
 
-    nodeElement.openBySearch = (pattern: RegExp, openLimit = 1, searchArea = 'all'): TreeSearchCursor => {
+    nodeElement.openBySearch = (pattern: RegExp, openLimit = 1, searchArea = 'all'): Promise<TreeSearchCursor> => {
       return this.openBySearch(nodeElement, pattern, openLimit, searchArea);
     };
 
@@ -248,13 +251,13 @@ export class BigJsonViewer {
     });
   }
 
-  protected isOpenableNode(node: JsonNodeInfo) {
-    return (node.type === 'array' || node.type === 'object') && node.length;
+  protected isOpenableNode(node: AsyncJsonNodeInfo): boolean {
+    return (node.type === 'array' || node.type === 'object') && !!node.length;
   }
 
-  protected closeNode(nodeElement: JsonNodeElement, dispatchEvent = false) {
+  protected async closeNode(nodeElement: JsonNodeElement, dispatchEvent = false): Promise<boolean> {
     if (!nodeElement.isNodeOpen()) {
-      return;
+      return false;
     }
     if (nodeElement.childrenElement) {
       nodeElement.headerElement.classList.remove('json-node-open');
@@ -263,7 +266,9 @@ export class BigJsonViewer {
       if (dispatchEvent) {
         this.dispatchNodeEvent('closeNode', nodeElement);
       }
+      return true;
     }
+    return false;
   }
 
   protected highlightNode(nodeElement: JsonNodeElement, pattern: RegExp) {
@@ -294,23 +299,23 @@ export class BigJsonViewer {
     return fragment;
   }
 
-  protected openBySearch(nodeElement: JsonNodeElement, pattern: RegExp,
-                         openLimit: number, searchArea: TreeSearchAreaOption): TreeSearchCursor {
+  protected async openBySearch(nodeElement: JsonNodeElement, pattern: RegExp,
+                               openLimit: number, searchArea: TreeSearchAreaOption): Promise<TreeSearchCursor> {
     if (!pattern) {
       this.closeNode(nodeElement, true);
       return null;
     }
     const viewer = this;
 
-    const matches = searchJsonNodes(nodeElement.jsonNode, pattern, searchArea);
+    const matches = await this.rootNode.search(nodeElement.jsonNode.path, pattern, searchArea);
     let activeMark = null;
     const cursor: TreeSearchCursor = {
       matches: matches,
       index: 0,
-      navigateTo(index: number) {
+      async navigateTo(index: number) {
         this.index = index;
         const match = this.matches[index];
-        const openedElement = viewer.openSearchMatch(nodeElement, this.matches[index]);
+        const openedElement = await viewer.openSearchMatch(nodeElement, this.matches[index]);
         if (openedElement) {
           viewer.highlightNode(openedElement, pattern);
           openedElement.scrollIntoView({block: 'center'});
@@ -333,7 +338,7 @@ export class BigJsonViewer {
 
     const length = Math.min(matches.length, openLimit);
     for (let i = 0; i < length && i < openLimit; i++) {
-      const openedElement = this.openSearchMatch(nodeElement, matches[i]);
+      const openedElement = await this.openSearchMatch(nodeElement, matches[i]);
       if (openedElement) {
         viewer.highlightNode(openedElement, pattern);
       }
@@ -380,16 +385,16 @@ export class BigJsonViewer {
     return null;
   }
 
-  protected openSearchMatch(nodeElement: JsonNodeElement, match: TreeSearchMatch): JsonNodeElement {
+  protected async openSearchMatch(nodeElement: JsonNodeElement, match: TreeSearchMatch): Promise<JsonNodeElement> {
     if (match.key !== undefined && match.path.length) {
       if (match.path.length) {
-        const matchNodeElementParent = this.openPath(nodeElement, match.path.slice(0, -1)); // open the parent
+        const matchNodeElementParent = await this.openPath(nodeElement, match.path.slice(0, -1)); // open the parent
         if (matchNodeElementParent) {
-          return this.openKey(matchNodeElementParent, match.path[match.path.length - 1]); // ensure the key is visible
+          return await this.openKey(matchNodeElementParent, match.path[match.path.length - 1]); // ensure the key is visible
         }
       }
     } else if (match.value !== undefined) {
-      return this.openPath(nodeElement, match.path);
+      return await this.openPath(nodeElement, match.path);
     }
     return null;
   }
@@ -428,13 +433,13 @@ export class BigJsonViewer {
     return result;
   }
 
-  protected openNode(nodeElement: JsonNodeElement, dispatchEvent = false) {
+  protected async openNode(nodeElement: JsonNodeElement, dispatchEvent = false): Promise<boolean> {
     if (nodeElement.isNodeOpen()) {
-      return;
+      return false;
     }
     nodeElement.headerElement.classList.add('json-node-open');
 
-    const children = this.getPaginatedNodeChildren(nodeElement);
+    const children = await this.getPaginatedNodeChildren(nodeElement);
 
     nodeElement.childrenElement = nodeElement.appendChild(children);
 
@@ -442,6 +447,7 @@ export class BigJsonViewer {
       this.dispatchNodeEvent('openNode', nodeElement);
     }
 
+    return true;
   }
 
   protected dispatchNodeEvent(type: BigJsonViewerEvent, nodeElement: JsonNodesStubElement) {
@@ -459,18 +465,18 @@ export class BigJsonViewer {
 
   }
 
-  protected openKey(nodeElement: JsonNodeElement, key: string): JsonNodeElement {
+  protected async openKey(nodeElement: JsonNodeElement, key: string): Promise<JsonNodeElement> {
     const node = nodeElement.jsonNode;
     let children: HTMLCollection = null;
     let index = -1;
     if (node.type === 'object') {
-      const keys = node.getObjectKeys();
+      const keys = await node.getObjectKeys();
       index = keys.indexOf(key);
       if (index === -1) {
         return null;
       }
 
-      nodeElement.openNode();
+      await nodeElement.openNode();
 
       // find correct stub in pagination
       if (node.length > this.options.objectNodesLimit) {
@@ -516,7 +522,7 @@ export class BigJsonViewer {
     return null;
   }
 
-  protected openPath(nodeElement: JsonNodeElement, path: string[], dispatchEvent = false): JsonNodeElement {
+  protected async openPath(nodeElement: JsonNodeElement, path: string[], dispatchEvent = false): Promise<JsonNodeElement> {
     if (!path.length) {
       this.openNode(nodeElement, dispatchEvent);
       return nodeElement;
@@ -527,7 +533,7 @@ export class BigJsonViewer {
       if (!element) {
         return null;
       }
-      element = this.openKey(element, path[i]);
+      element = await this.openKey(element, path[i]);
       if (element) {
         element.openNode();
       }
@@ -538,7 +544,8 @@ export class BigJsonViewer {
     return element;
   }
 
-  protected openAll(nodeElement: JsonNodeElement, maxDepth: number, paginated: PaginatedOption, dispatchEvent = false): number {
+  protected async openAll(nodeElement: JsonNodeElement, maxDepth: number,
+                          paginated: PaginatedOption, dispatchEvent = false): Promise<number> {
     nodeElement.openNode();
     let opened = 1;
     if (maxDepth <= 1 || !nodeElement.childrenElement) {
@@ -546,7 +553,7 @@ export class BigJsonViewer {
     }
     const newMaxDepth = maxDepth === Infinity ? Infinity : maxDepth - 1;
 
-    opened += this.openAllChildren(nodeElement.childrenElement.children, newMaxDepth, paginated);
+    opened += await this.openAllChildren(nodeElement.childrenElement.children, newMaxDepth, paginated);
 
     if (dispatchEvent) {
       this.dispatchNodeEvent('openedNodes', nodeElement);
@@ -555,12 +562,12 @@ export class BigJsonViewer {
     return opened;
   }
 
-  protected openAllChildren(children: HTMLCollection, maxDepth: number, paginated: PaginatedOption): number {
+  protected async openAllChildren(children: HTMLCollection, maxDepth: number, paginated: PaginatedOption): Promise<number> {
     let opened = 0;
     for (let i = 0; i < children.length; i++) {
       const child = children[i] as JsonNodeElement;
       if (child.jsonNode) { // is a node
-        opened += child.openAll(maxDepth, paginated);
+        opened += await child.openAll(maxDepth, paginated);
 
       } else if (child.openNode) { // is a stub
         if (paginated === 'none') {
@@ -568,7 +575,7 @@ export class BigJsonViewer {
         }
         child.openNode();
         if (child.childrenElement) {
-          opened += this.openAllChildren(child.childrenElement.children, maxDepth, paginated);
+          opened += await this.openAllChildren(child.childrenElement.children, maxDepth, paginated);
         }
         if (paginated === 'first') {
           return opened;
@@ -581,7 +588,7 @@ export class BigJsonViewer {
   /**
    * Returns the pagination limit, if the node should have
    */
-  protected getPaginationLimit(node: JsonNodeInfo): number {
+  protected getPaginationLimit(node: AsyncJsonNodeInfo): number {
     if (node.type === 'array' && node.length > this.options.arrayNodesLimit) {
       return this.options.arrayNodesLimit;
     }
@@ -605,7 +612,7 @@ export class BigJsonViewer {
     return result;
   }
 
-  protected getPaginatedNodeChildren(nodeElement: JsonNodeElement): HTMLDivElement {
+  protected async getPaginatedNodeChildren(nodeElement: JsonNodeElement): Promise<HTMLDivElement> {
     const node = nodeElement.jsonNode;
     const element = document.createElement('div');
     element.classList.add('json-node-children');
@@ -616,7 +623,7 @@ export class BigJsonViewer {
         element.appendChild(this.getPaginationStub(node, start, limit));
       }
     } else {
-      const nodes = this.getChildNodes(node, 0, limit);
+      const nodes = await this.getChildNodes(node, 0, limit);
       nodes.forEach(node => {
         element.appendChild(this.getNodeElement(node));
       });
@@ -624,17 +631,17 @@ export class BigJsonViewer {
     return element;
   }
 
-  protected getChildNodes(node: JsonNodeInfo, start, limit): JsonNodeInfo[] {
+  protected getChildNodes(node: AsyncJsonNodeInfo, start, limit): Promise<AsyncJsonNodeInfo[]> {
     if (node.type === 'object') {
       return node.getObjectNodes(start, limit);
     }
     if (node.type === 'array') {
       return node.getArrayNodes(start, limit);
     }
-    return [];
+    return Promise.resolve([]);
   }
 
-  protected getPaginationStub(node: JsonNodeInfo, start: number, limit: number): JsonNodesStubElement {
+  protected getPaginationStub(node: AsyncJsonNodeInfo, start: number, limit: number): JsonNodesStubElement {
     const stubElement = document.createElement('div') as JsonNodesStubElement;
     stubElement.classList.add('json-node-stub');
 
@@ -654,12 +661,12 @@ export class BigJsonViewer {
 
     stubElement.appendChild(anchor);
 
-    anchor.addEventListener('click', e => {
+    anchor.addEventListener('click', async e => {
       e.preventDefault();
       if (stubElement.isNodeOpen()) {
         this.closePaginationStub(stubElement, true);
       } else {
-        this.openPaginationStub(stubElement, this.getChildNodes(node, start, limit), true);
+        this.openPaginationStub(stubElement, await this.getChildNodes(node, start, limit), true);
       }
     });
 
@@ -667,23 +674,27 @@ export class BigJsonViewer {
       return anchor.classList.contains('json-node-open');
     };
 
-    stubElement.openNode = () => {
+    stubElement.openNode = async (): Promise<boolean> => {
       if (!stubElement.isNodeOpen()) {
-        this.openPaginationStub(stubElement, this.getChildNodes(node, start, limit));
+        this.openPaginationStub(stubElement, await this.getChildNodes(node, start, limit));
+        return true;
       }
+      return false;
     };
 
-    stubElement.closeNode = () => {
+    stubElement.closeNode = async (): Promise<boolean> => {
       if (stubElement.isNodeOpen()) {
         this.closePaginationStub(stubElement);
+        return false;
       }
+      return true;
     };
 
-    stubElement.toggleNode = () => {
+    stubElement.toggleNode = (): Promise<boolean> => {
       if (stubElement.isNodeOpen()) {
-        stubElement.closeNode();
+        return stubElement.closeNode();
       } else {
-        stubElement.openNode();
+        return stubElement.openNode();
       }
     };
 
@@ -701,7 +712,7 @@ export class BigJsonViewer {
     }
   }
 
-  protected openPaginationStub(stubElement: JsonNodesStubElement, nodes: JsonNodeInfo[], dispatchEvent = false) {
+  protected openPaginationStub(stubElement: JsonNodesStubElement, nodes: AsyncJsonNodeInfo[], dispatchEvent = false) {
     stubElement.headerElement.classList.add('json-node-open');
     const children = document.createElement('div');
     children.classList.add('json-node-children');
@@ -715,7 +726,7 @@ export class BigJsonViewer {
     }
   }
 
-  protected getNodeHeader(node: JsonNodeInfo, highlightPattern: RegExp = null) {
+  protected getNodeHeader(node: AsyncJsonNodeInfo, highlightPattern: RegExp = null) {
     const element = document.createElement('div');
     element.classList.add('json-node-header');
     element.classList.add('json-node-' + node.type);
@@ -748,7 +759,7 @@ export class BigJsonViewer {
     parent.appendChild(span);
   }
 
-  protected generateTypeInfo(parent: HTMLElement, node: JsonNodeInfo) {
+  protected generateTypeInfo(parent: HTMLElement, node: AsyncJsonNodeInfo) {
     const typeInfo = document.createElement('span');
     typeInfo.classList.add('json-node-type');
     if (node.type === 'object') {
@@ -762,7 +773,7 @@ export class BigJsonViewer {
 
   }
 
-  protected generateLabel(parent: HTMLElement, node: JsonNodeInfo, highlightPattern: RegExp) {
+  protected generateLabel(parent: HTMLElement, node: AsyncJsonNodeInfo, highlightPattern: RegExp) {
     if (!node.path.length) {
       return;
     }
@@ -781,7 +792,7 @@ export class BigJsonViewer {
     parent.appendChild(document.createTextNode(': '));
   }
 
-  protected generateValue(parent: HTMLElement, node: JsonNodeInfo, highlightPattern: RegExp) {
+  protected generateValue(parent: HTMLElement, node: AsyncJsonNodeInfo, highlightPattern: RegExp) {
     const valueElement = document.createElement('span');
     valueElement.classList.add('json-node-value');
     valueElement.appendChild(this.getHighlightedText(JSON.stringify(node.getValue()), highlightPattern));
@@ -789,7 +800,7 @@ export class BigJsonViewer {
   }
 
 
-  protected generateLinks(parent: HTMLElement, node: JsonNodeInfo) {
+  protected generateLinks(parent: HTMLElement, node: AsyncJsonNodeInfo) {
 
     if (this.isOpenableNode(node) && this.options.linkLabelExpandAll) {
       const link = parent.appendChild(document.createElement('a'));

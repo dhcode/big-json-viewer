@@ -1,5 +1,6 @@
 import {JsonNodeInfo} from '../parser/json-node-info';
 import {BufferJsonParser} from '../parser/buffer-json-parser';
+import {searchJsonNodes} from '../parser/json-node-search';
 
 declare interface DedicatedWorkerGlobalScope {
   onmessage: (this: DedicatedWorkerGlobalScope, ev: MessageEvent) => any;
@@ -56,7 +57,7 @@ class JsonParserWorker {
     };
   }
 
-  callParser(key: string, path: string[], method: string, args?: any[]): any {
+  callParser(key: string, path: string[], method: string, ...args: any[]): any {
     if (this.rootNodes[key]) {
       if (method === 'closeParser') {
         delete this.rootNodes[key];
@@ -64,6 +65,9 @@ class JsonParserWorker {
       }
       const rootNode = this.rootNodes[key];
       const targetNode = rootNode.getByPath(path);
+      if (method === 'search') {
+        return searchJsonNodes.apply(null, [targetNode, ...args]);
+      }
       if (!targetNode) {
         throw new Error('Node "' + rootNode.path + '" has no path "' + path + '"');
       }

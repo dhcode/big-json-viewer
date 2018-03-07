@@ -65,10 +65,10 @@ codeElement.addEventListener('input', e => {
   console.log('show data based on input');
   showData(codeElement.value);
 });
-searchElement.addEventListener('input', e => {
-  rootNode.closeNode();
+searchElement.addEventListener('input', async e => {
+  await rootNode.closeNode();
   if (searchElement.value.length >= 2) {
-    const cursor = rootNode.openBySearch(new RegExp(searchElement.value, 'i'));
+    const cursor = await rootNode.openBySearch(new RegExp(searchElement.value, 'i'));
     searchInfoElement.textContent = cursor.matches.length + ' matches';
 
     searchInfoElement.appendChild(document.createTextNode(' '));
@@ -91,7 +91,7 @@ searchElement.addEventListener('input', e => {
     });
     nextBtn.textContent = 'Next';
   } else {
-    rootNode.openBySearch(null);
+    await rootNode.openBySearch(null);
     searchInfoElement.textContent = '';
   }
 
@@ -107,15 +107,15 @@ function loadStructureData(structure) {
   showPaths();
 }
 
-function showData(data: string) {
+async function showData(data: string) {
   if (viewerElement.children.length) {
     viewerElement.removeChild(viewerElement.children[0]);
   }
   try {
-    rootNode = BigJsonViewer.elementFromData(data);
+    rootNode = await BigJsonViewer.elementFromData(data);
     rootNode.id = 'rootNode';
     viewerElement.appendChild(rootNode);
-    rootNode.openAll(1);
+    await rootNode.openAll(1);
     setupRootNode();
 
   } catch (e) {
@@ -125,15 +125,6 @@ function showData(data: string) {
     errEl.appendChild(document.createTextNode(e.toString()));
     viewerElement.appendChild(errEl);
   }
-
-  parseWithWorker(data)
-    .then(info => {
-      console.log('async info', info);
-      return info.getObjectNodes();
-    })
-    .then(nodes => {
-      console.log('async object nodes', nodes);
-    });
 
 }
 

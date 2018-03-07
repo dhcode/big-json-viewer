@@ -1,12 +1,19 @@
-import {AsyncJsonNodeInfo, AsyncJsonNodeInfoProxy, ClosableJsonNodeInfo, JsonNodeInfo, NodeType} from './parser/json-node-info';
+import {AsyncJsonNodeInfo, AsyncJsonNodeInfoProxy, JsonNodeInfo, NodeType} from './parser/json-node-info';
 import {BufferJsonParser} from './parser/buffer-json-parser';
+import {searchJsonNodes, TreeSearchAreaOption, TreeSearchMatch} from './parser/json-node-search';
 
 export type WorkerCall = (...args) => Promise<any>;
+
+export interface WorkerJsonNodeInfo extends AsyncJsonNodeInfo {
+  close();
+
+  search(path: string[], pattern: RegExp, searchArea?: TreeSearchAreaOption): Promise<TreeSearchMatch[]>;
+}
 
 /**
  * Implements the JsonNodeInfo API to call the parser in a web worker.
  */
-export class WorkerParserJsonInfo implements ClosableJsonNodeInfo {
+export class WorkerParserJsonInfo implements WorkerJsonNodeInfo {
   type: NodeType;
   path: string[];
   length: number;
@@ -54,11 +61,24 @@ export class WorkerParserJsonInfo implements ClosableJsonNodeInfo {
   close(): Promise<any> {
     return this.workerCall(this.path, 'closeParser');
   }
+
+
+  search(path: string[], pattern: RegExp, searchArea: TreeSearchAreaOption = 'all'): Promise<TreeSearchMatch[]> {
+    return this.workerCall(this.path, 'search', pattern, searchArea);
+  }
 }
 
-export class ClosableAsyncJsonNodeInfoProxy extends AsyncJsonNodeInfoProxy implements ClosableJsonNodeInfo {
-  constructor(nodeInfo: JsonNodeInfo) {
-    super(nodeInfo);
+export class ClosableAsyncJsonNodeInfoProxy extends AsyncJsonNodeInfoProxy implements WorkerJsonNodeInfo {
+  constructor(private _nodeInfo: JsonNodeInfo) {
+    super(_nodeInfo);
+  }
+
+  search(path: string[], pattern: RegExp, searchArea: TreeSearchAreaOption = 'all'): Promise<TreeSearchMatch[]> {
+    const targetNode = this._nodeInfo.getByPath(path);
+    if (targetNode) {
+      return Promise.resolve(searchJsonNodes(targetNode, pattern, searchArea));
+    }
+    return Promise.resolve([]);
   }
 
   close() {
@@ -111,18 +131,21 @@ export class WorkerClient {
 
 }
 
-export function parseWithWorker(data: string | ArrayBuffer): Promise<ClosableJsonNodeInfo> {
+export async function parseWithWorker(data: string | ArrayBuffer): Promise<WorkerJsonNodeInfo> {
   if (!window['Worker']) {
-    return new Promise(resolve => {
-      resolve(new ClosableAsyncJsonNodeInfoProxy(new BufferJsonParser(data).getRootNodeInfo()));
-    });
+    return new ClosableAsyncJsonNodeInfoProxy(new BufferJsonParser(data).getRootNodeInfo());
   }
   const worker = new WorkerClient();
-  return worker.callWorker('openParser', [data], data).then(info => {
-    const workerCall: WorkerCall = (...args) => {
-      return worker.call('callParser', this.parserKey, ...args);
-    };
-    return new WorkerParserJsonInfo(workerCall, info.node);
-  });
+  let info;
+  if (data instanceof ArrayBuffer) {
+    info = await worker.callWorker('openParser', [data], data);
+  } else {
+    info = await worker.call('openParser', data);
+  }
+
+  const workerCall: WorkerCall = (...args) => {
+    return worker.call('callParser', this.parserKey, ...args);
+  };
+  return new WorkerParserJsonInfo(workerCall, info.node);
 }
 
