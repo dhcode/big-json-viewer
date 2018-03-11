@@ -114,11 +114,14 @@ export class WorkerClient {
   public callWorker(handler, transfers = undefined, ...args): Promise<any> {
     return new Promise((resolve, reject) => {
       const resultId = ++this.requestIndex;
+      // console.log('request ' + resultId + ' ' + handler, args);
       this.requestCallbacks[resultId] = (data) => {
         if (data.error !== undefined) {
+          // console.log('response error ' + resultId, data.error);
           reject(data.error);
           return;
         }
+        // console.log('response ' + resultId, data.result);
         resolve(data.result);
       };
       this.worker.postMessage({
@@ -144,7 +147,7 @@ export async function parseWithWorker(data: string | ArrayBuffer): Promise<Worke
   }
 
   const workerCall: WorkerCall = (...args) => {
-    return worker.call('callParser', this.parserKey, ...args);
+    return worker.call('callParser', info.parserKey, ...args);
   };
   return new WorkerParserJsonInfo(workerCall, info.node);
 }

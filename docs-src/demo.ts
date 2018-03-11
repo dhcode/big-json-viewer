@@ -1,4 +1,4 @@
-import {BigJsonViewer, JsonNodeElement, parseWithWorker} from '../src';
+import {BigJsonViewer, JsonNodeElement} from '../src';
 
 const demoData = {
   simpleData: {

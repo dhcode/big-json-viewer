@@ -54,7 +54,15 @@ export interface JsonNodeInfo extends JsonNodeInfoBase {
    * Get the natively parsed value
    */
   getValue(): any;
+
+  /**
+   * Gets the base info about the node
+   */
+  getInfo(): JsonNodeInfoBase;
 }
+
+export const JsonNodeInfoArrayMethods = ['getObjectNodes', 'getArrayNodes'];
+export const JsonNodeInfoMethods = ['getByIndex', 'getByKey', 'getByPath'];
 
 export interface AsyncJsonNodeInfo extends JsonNodeInfoBase {
   /**

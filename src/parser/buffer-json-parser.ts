@@ -1,4 +1,4 @@
-import {JsonNodeInfo, NodeType} from './json-node-info';
+import {JsonNodeInfo, JsonNodeInfoBase, NodeType} from './json-node-info';
 
 const BRACE_START = '{'.charCodeAt(0);
 const BRACE_END = '}'.charCodeAt(0);
@@ -45,11 +45,11 @@ export interface ParseContext {
 
 export class BufferJsonNodeInfo implements JsonNodeInfo {
   public type: NodeType;
-  public path: string[] = [];
+  public readonly path: string[] = [];
   public length?: number; // in case of array, object, string
   public chars: number;
-  private parser: BufferJsonParser;
-  private index;
+  private readonly parser: BufferJsonParser;
+  private readonly index;
 
   constructor(parser: BufferJsonParser, index: number, path: string[]) {
     this.parser = parser;
@@ -184,6 +184,14 @@ export class BufferJsonNodeInfo implements JsonNodeInfo {
    */
   public getValue(): any {
     return this.parser.parseNative(this.index, this.index + this.chars);
+  }
+
+  public getInfo(): JsonNodeInfoBase {
+    return {
+      type: this.type,
+      path: this.path,
+      length: this.length
+    };
   }
 }
 

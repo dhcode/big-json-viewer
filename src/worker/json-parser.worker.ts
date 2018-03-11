@@ -1,4 +1,4 @@
-import {JsonNodeInfo} from '../parser/json-node-info';
+import {JsonNodeInfo, JsonNodeInfoArrayMethods, JsonNodeInfoMethods} from '../parser/json-node-info';
 import {BufferJsonParser} from '../parser/buffer-json-parser';
 import {searchJsonNodes} from '../parser/json-node-search';
 
@@ -13,7 +13,6 @@ declare interface DedicatedWorkerGlobalScope {
 const scope = self as any as DedicatedWorkerGlobalScope;
 
 scope.onmessage = function (msg) {
-  console.log('received in worker ', msg.data);
   const data = msg.data;
 
   if (data.handler && jsonParserWorker[data.handler]) {
@@ -53,7 +52,7 @@ class JsonParserWorker {
     this.rootNodes[key] = new BufferJsonParser(data).getRootNodeInfo();
     return {
       parserKey: key,
-      node: this.rootNodes[key]
+      node: this.rootNodes[key].getInfo()
     };
   }
 
@@ -71,7 +70,14 @@ class JsonParserWorker {
       if (!targetNode) {
         throw new Error('Node "' + rootNode.path + '" has no path "' + path + '"');
       }
-      return targetNode[method].apply(targetNode, args);
+      const result = targetNode[method].apply(targetNode, args);
+      if (JsonNodeInfoMethods.indexOf(method) !== -1 && result) {
+        return result.getInfo();
+      }
+      if (JsonNodeInfoArrayMethods.indexOf(method) !== -1 && result) {
+        return result.map(entry => entry.getInfo());
+      }
+      return result;
     }
     throw new Error('Unknown rootNode ' + key);
   }
