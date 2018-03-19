@@ -1,6 +1,5 @@
-import {AsyncJsonNodeInfo, JsonNodeInfo} from './parser/json-node-info';
-import {BufferJsonParser} from './parser/buffer-json-parser';
-import {forEachMatchFromString, searchJsonNodes, TreeSearchAreaOption, TreeSearchMatch} from './parser/json-node-search';
+import {AsyncJsonNodeInfo} from './parser/json-node-info';
+import {forEachMatchFromString, TreeSearchAreaOption, TreeSearchMatch} from './parser/json-node-search';
 import {parseWithWorker, WorkerJsonNodeInfo} from './worker-client';
 
 export interface JsonNodesStubElement extends HTMLDivElement {
@@ -441,9 +440,11 @@ export class BigJsonViewer {
       return false;
     }
     nodeElement.headerElement.classList.add('json-node-open');
+    nodeElement.headerElement.classList.add('json-node-loading');
 
     const children = await this.getPaginatedNodeChildren(nodeElement);
 
+    nodeElement.headerElement.classList.remove('json-node-loading');
     nodeElement.childrenElement = nodeElement.appendChild(children);
 
     if (dispatchEvent) {
@@ -717,12 +718,14 @@ export class BigJsonViewer {
 
   protected async openPaginationStub(stubElement: JsonNodesStubElement, nodes: AsyncJsonNodeInfo[], dispatchEvent = false) {
     stubElement.headerElement.classList.add('json-node-open');
+    stubElement.headerElement.classList.add('json-node-loading');
     const children = document.createElement('div');
     children.classList.add('json-node-children');
     stubElement.childrenElement = children;
     for (const node of nodes) {
       children.appendChild(await this.getNodeElement(node));
     }
+    stubElement.headerElement.classList.remove('json-node-loading');
     stubElement.appendChild(children);
     if (dispatchEvent) {
       this.dispatchNodeEvent('openStub', stubElement);

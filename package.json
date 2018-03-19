@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "preversion": "tsc",
-    "build-docs": "parcel build docs-src/index.html --out-dir docs --public-url ./",
+    "build-docs": "parcel build docs-src/index.html --out-dir docs --public-url ./ --no-minify --detailed-report",
     "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp",
     "build-worker": "parcel build src/worker/json-parser.worker.ts --out-dir dist/worker --no-minify",
     "lint": "tslint -c tslint.json -p tsconfig.json",
@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@types/jasmine": "^2.8.6",
+    "babel-polyfill": "^6.26.0",
     "jasmine-core": "^2.99.1",
     "karma": "^2.0.0",
     "karma-chrome-launcher": "^2.2.0",
@@ -40,5 +41,6 @@
     "parcel-bundler": "^1.6.2",
     "tslint": "^5.9.1",
     "typescript": "^2.7.2"
-  }
+  },
+  "dependencies": {}
 }

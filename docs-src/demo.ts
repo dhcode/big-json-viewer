@@ -1,3 +1,4 @@
+import 'babel-polyfill';
 import {BigJsonViewer, JsonNodeElement} from '../src';
 
 const demoData = {
@@ -103,8 +104,9 @@ loadStructureData(demoData.simpleData);
 function loadStructureData(structure) {
   const text = JSON.stringify(structure, null, 2);
   codeElement.value = text;
-  showData(text);
-  showPaths();
+  showData(text).then(() => {
+    showPaths();
+  });
 }
 
 async function showData(data: string) {

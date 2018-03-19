@@ -64,12 +64,16 @@
   content: '▶';
   font-size: 0.6em;
   line-height: 1.6em;
+  text-decoration: none;
   right: 0;
   transition: transform 100ms ease-out;
 }
 
 .json-node-open .json-node-accessor::before {
   transform: rotate(90deg);
+}
+.json-node-open.json-node-loading .json-node-accessor::before {
+  animation: 1s infinite json-node-loading;
 }
 
 .json-node-children {
@@ -80,6 +84,15 @@
 
 .json-node-stub-toggler .json-node-label {
   color: #7f7f7f;
+}
+
+@keyframes json-node-loading {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes json-node-children-open {
