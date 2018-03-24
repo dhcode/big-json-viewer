@@ -1,5 +1,6 @@
 import {BufferJsonParser} from './buffer-json-parser';
-import {searchJsonNodes, TreeSearchMatch} from './json-node-search';
+import {searchJsonNodes} from './json-node-search';
+import {TreeSearchMatch} from '../';
 
 describe('JSON Node Search', function () {
   it('should find results', function () {

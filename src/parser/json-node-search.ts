@@ -1,15 +1,7 @@
 import {JsonNodeInfo} from './json-node-info';
+import {TreeSearchAreaOption, TreeSearchMatch} from '../model/big-json-viewer.model';
 
-export type TreeSearchAreaOption = 'all' // search in keys and values
-  | 'keys' // search only in keys
-  | 'values'; // search only in values
-
-export interface TreeSearchMatch {
-  path: string[];
-  key?: number; // if the match was in the key, at which index
-  value?: number; // if the match was in the value, at which index
-  length: number; // length of the match
-}
+// search only in values
 
 export function searchJsonNodes(node: JsonNodeInfo, pattern: RegExp, searchArea: TreeSearchAreaOption = 'all'): TreeSearchMatch[] {
   pattern = ensureGlobal(pattern);
