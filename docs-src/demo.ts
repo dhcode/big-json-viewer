@@ -1,3 +1,4 @@
+import 'babel-polyfill';
 import {BigJsonViewerDom, JsonNodeElement} from '../src';
 
 const demoData = {

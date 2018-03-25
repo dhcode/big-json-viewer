@@ -2,8 +2,11 @@ import {
   BigJsonViewerEvent, BigJsonViewerNode, BigJsonViewerOptions, JsonNodesStubElement, PaginatedOption, TreeSearchAreaOption,
   TreeSearchCursor, TreeSearchMatch
 } from './model/big-json-viewer.model';
-import {WorkerClient} from './helpers/worker-client';
+import {WorkerClient, WorkerClientApi, WorkerClientMock} from './helpers/worker-client';
 import {forEachMatchFromString} from './parser/json-node-search';
+import {BigJsonViewerService} from './big-json-viewer-service';
+
+declare var require: any;
 
 export interface JsonNodeElement extends JsonNodesStubElement {
   jsonNode: BigJsonViewerNode;
@@ -41,7 +44,7 @@ export interface JsonNodeElement extends JsonNodesStubElement {
 
 export class BigJsonViewerDom {
 
-  workerClient: WorkerClient;
+  workerClient: WorkerClientApi;
 
   options: BigJsonViewerOptions = {
     objectNodesLimit: 50,
@@ -72,8 +75,15 @@ export class BigJsonViewerDom {
 
   getWorkerClient() {
     if (!this.workerClient) {
-      const worker = new Worker('./worker/big-json-viewer.worker.ts');
-      this.workerClient = new WorkerClient(worker);
+      if (typeof(Worker) === 'undefined') {
+        const serviceModule = require('./big-json-viewer-service');
+        const service = new serviceModule.BigJsonViewerService();
+        this.workerClient = new WorkerClientMock(service);
+
+      } else {
+        const worker = new Worker('./worker/big-json-viewer.worker.ts');
+        this.workerClient = new WorkerClient(worker);
+      }
     }
     return this.workerClient;
   }
@@ -237,7 +247,7 @@ export class BigJsonViewerDom {
   }
 
   protected async openBySearch(nodeElement: JsonNodeElement, pattern: RegExp,
-                         openLimit: number, searchArea: TreeSearchAreaOption): Promise<TreeSearchCursor> {
+                               openLimit: number, searchArea: TreeSearchAreaOption): Promise<TreeSearchCursor> {
     if (!pattern) {
       this.closeNode(nodeElement, true);
       return null;
@@ -255,7 +265,9 @@ export class BigJsonViewerDom {
         const openedElement = await viewer.openSearchMatch(nodeElement, this.matches[index]);
         if (openedElement) {
           viewer.highlightNode(openedElement, pattern);
-          openedElement.scrollIntoView({block: 'center'});
+          if (openedElement.scrollIntoView) {
+            openedElement.scrollIntoView({block: 'center'});
+          }
           if (activeMark) {
             activeMark.classList.remove('highlight-active');
           }
@@ -263,13 +275,15 @@ export class BigJsonViewerDom {
           if (activeMark) {
             activeMark.classList.add('highlight-active');
           }
+          return true;
         }
+        return false;
       },
       next() {
-        this.navigateTo(this.index + 1 >= this.matches.length ? 0 : this.index + 1);
+        return this.navigateTo(this.index + 1 >= this.matches.length ? 0 : this.index + 1);
       },
       previous() {
-        this.navigateTo(this.index - 1 < 0 ? this.matches.length : this.index - 1);
+        return this.navigateTo(this.index - 1 < 0 ? this.matches.length : this.index - 1);
       }
     };
 

@@ -59,17 +59,17 @@ export interface TreeSearchCursor {
   /**
    * Navigate to the next match
    */
-  next();
+  next(): Promise<boolean>;
 
   /**
    * Navigate to the previous match
    */
-  previous();
+  previous(): Promise<boolean>;
 
   /**
    * Navigate to the given match
    */
-  navigateTo(index: number);
+  navigateTo(index: number): Promise<boolean>;
 }
 
 export interface BigJsonViewerOptions {

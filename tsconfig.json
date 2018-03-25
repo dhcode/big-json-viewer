@@ -19,7 +19,6 @@
     "src/**/*"
   ],
   "exclude": [
-    "src/**/*.spec.ts",
-    "src/worker"
+    "src/**/*.spec.ts"
   ]
 }

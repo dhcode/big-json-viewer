@@ -1,4 +1,10 @@
-export class WorkerClient {
+export interface WorkerClientApi {
+  call(handler: string, ...args): Promise<any>;
+
+  callWorker(handler: string, transfers: any[], ...args): Promise<any>;
+}
+
+export class WorkerClient implements WorkerClientApi {
   private requestIndex = 0;
   private requestCallbacks = {};
 
@@ -39,4 +45,19 @@ export class WorkerClient {
     });
   }
 
-};
+}
+
+export class WorkerClientMock implements WorkerClientApi {
+  constructor(private provider) {
+  }
+
+  public call(handler, ...args): Promise<any> {
+    return this.callWorker(handler, undefined, ...args);
+  }
+
+  public callWorker(handler, transfers = undefined, ...args): Promise<any> {
+    return new Promise(resolve => {
+      resolve(this.provider[handler].apply(this.provider, args));
+    });
+  }
+}
