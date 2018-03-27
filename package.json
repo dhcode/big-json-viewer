@@ -30,7 +30,6 @@
     "url": "https://github.com/dhcode/big-json-viewer.git"
   },
   "devDependencies": {
-    "@types/jasmine": "^2.8.6",
     "@types/jest": "^22.2.2",
     "babel-polyfill": "^6.26.0",
     "jasmine-core": "^2.99.1",

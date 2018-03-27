@@ -484,7 +484,7 @@ export class BigJsonViewerDom {
       }
       element = await this.openKey(element, path[i]);
       if (element) {
-        element.openNode();
+        await element.openNode();
       }
     }
     if (dispatchEvent) {

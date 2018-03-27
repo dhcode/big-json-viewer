@@ -1,4 +1,4 @@
-import {BigJsonViewerDom} from './big-json-viewer-dom';
+import {BigJsonViewerDom, JsonNodeElement} from './big-json-viewer-dom';
 
 
 describe('Big JSON Viewer', function () {
@@ -24,7 +24,7 @@ describe('Big JSON Viewer', function () {
   it('should create DOM from more complex object', async function () {
     const data = '{"hello": "hello world, is a great world","test": [0,"old world",{"worldgame": true}]}';
     const instance = await BigJsonViewerDom.fromData(data);
-    const root = instance.getRootElement();
+    const root: JsonNodeElement = instance.getRootElement();
     expect(root).toBeTruthy();
     await root.openAll();
     expect(root.getOpenPaths()).toEqual([
@@ -35,6 +35,8 @@ describe('Big JSON Viewer', function () {
     expect(root.childrenElement.children.length).toEqual(2);
 
     await root.closeNode();
+
+    expect(root.isNodeOpen()).toBeFalsy();
 
     const cursor = await root.openBySearch(/world/);
     expect(cursor).toBeTruthy();
