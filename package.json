@@ -5,18 +5,20 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc && parcel build src/browser-api.ts --no-minify",
+    "clean-build":
+      "del-cli dist && node tools/build-inline-worker.js && tsc && parcel build src/browser-api.ts",
+    "build": "npm run clean-build && cpx styles/default.css dist",
     "prepack": "npm run build",
     "build-docs":
-      "parcel build docs-src/index.html --out-dir docs --public-url ./",
+      "del-cli docs && parcel build docs-src/index.html --out-dir docs --public-url ./ && git add docs",
     "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp --no-hmr",
     "build-worker":
-      "parcel build src/worker/big-json-viewer.worker.ts --out-dir dist",
+      "parcel build src/worker/big-json-viewer.worker.ts --out-dir src/worker",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "jest",
     "publish-patch": "npm version patch && npm publish",
     "publish-minor": "npm version minor && npm publish",
-    "precommit": "pretty-quick"
+    "precommit": "pretty-quick && npm run build-docs"
   },
   "keywords": ["JSON", "JavaScript", "TypeScript", "big", "JSON", "viewer"],
   "author": "Dominik Herbst",
@@ -28,10 +30,12 @@
   "devDependencies": {
     "@types/jest": "^22.2.2",
     "babel-polyfill": "^6.26.0",
+    "cpx": "^1.5.0",
+    "del-cli": "^1.1.0",
     "husky": "^0.14.3",
     "jasmine-core": "^2.99.1",
     "jest": "^22.4.3",
-    "parcel-bundler": "file:../../github/parcel/parcel-bundler-v1.7.0.tgz",
+    "parcel-bundler": "^1.7.0",
     "prettier": "^1.11.1",
     "pretty-quick": "^1.4.1",
     "ts-jest": "^22.4.2",
@@ -49,5 +53,13 @@
   },
   "prettier": {
     "singleQuote": true
-  }
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm test",
+      "pre-push": "npm test",
+      "...": "..."
+    }
+  },
+  "dependencies": {}
 }

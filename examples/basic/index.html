@@ -3,9 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <title>JSON Viewer basic example</title>
-  <script src="../../dist/browser-index.js"></script>
+  <link rel="stylesheet" href="../../dist/default.css">
+  <script src="../../dist/browser-api.js"></script>
 </head>
 <body>
+<script>
+  BigJsonViewerDom.fromData(JSON.stringify({
+    test: 23,
+    someArray: [45, 2, 5, true, false, null]
+  })).then(viewer => {
+    const node = viewer.getRootElement();
+    document.body.appendChild(node);
+    node.openAll(1);
 
+  });
+</script>
 </body>
 </html>

@@ -22,16 +22,13 @@ No dependencies, works directly on the DOM API. Runs in any modern browser and I
 test.ts
 
 ```typescript
-import { BigJsonViewer } from 'big-json-viewer';
+import { BigJsonViewerDom } from 'big-json-viewer';
 
-document.body.appendChild(
-    BigJsonViewer.elementFromData(
-        JSON.stringify({
-            test: 23,
-            someArray: [45, 2, 5, true, false, null]
-        })
-    )
-);
+BigJsonViewerDom.fromData(JSON.stringify({ test: 23 })).then(viewer => {
+    const node = viewer.getRootElement();
+    document.body.appendChild(node);
+    node.openAll(1);
+});
 ```
 
 index.html
@@ -56,17 +53,18 @@ Example run with `parcel` (`npm install -D parce-bundler`);
 
 ## Getting started
 
-You want to use the static method to display a JSON.
+You can use the following static method to get a new viewer instance:
 
 ```typescript
-BigJsonViewer.elementFromData(data: ArrayBuffer | string, options?: BigJsonViewerOptions): JsonNodeElement
+import { BigJsonViewerDom, BigJsonViewerOptions } from 'big-json-viewer';
+BigJsonViewerDom.fromData(data: ArrayBuffer | string, options?: BigJsonViewerOptions): Promise<BigJsonViewerDom>
 ```
 
-It returns a `JsonNodeElement` object, that is an `HTMLDivElement` with some extras. You can insert it anywhere in your DOM.
+It returns a `BigJsonViewerDom` instance. Call `getRootElement()` on it to get a `JsonNodeElement`, that is an `HTMLDivElement` with some extras. You can insert it anywhere in your DOM.
 
 ## Options
 
-When calling `elementFromData`, you can provide an object matching the interface `BigJsonViewerOptions`.
+When calling `fromData`, you can provide an object matching the interface `BigJsonViewerOptions`.
 
 Example:
 
@@ -79,6 +77,26 @@ Example:
 ```
 
 ## API
+
+## `BigJsonViewerDom` methods
+
+#### `getRootElement()`
+
+Returns the `JsonNodeElement` that can be appended to the DOM.
+
+#### `destroy()`
+
+Call this to free resources. It will terminate any by the instance started worker.
+
+#### `openBySearch(pattern: RegExp, openLimit?: number, searchArea?: TreeSearchAreaOption): TreeSearchCursor;`
+
+Searches the tree by the specified `pattern` and `searchArea`. Returns a `TreeSearchCursor`, which contains all matches and methods to jump the focus between the matches.
+
+*   `openLimit` is `1` by default. But can be `Infinity` or any number.
+*   `searchArea` describes where the pattern should be searched. Has the following options:
+    *   `'all'` search in keys and values (default)
+    *   `'keys'` search only in keys
+    *   `'values'` search only in values
 
 ## `JsonNodeElement` methods
 
@@ -114,16 +132,6 @@ Returns a list of opened paths.
 `withStubs` is `true` by default. It makes sure, that paginated stubs that are opened are considered.
 
 When you have a limit of 50 nodes and you open the second stub `[50 ... 99]`, a path it retuned that contains the name of the first node in the stub.
-
-#### `openBySearch(pattern: RegExp, openLimit?: number, searchArea?: TreeSearchAreaOption): TreeSearchCursor;`
-
-Searches the tree by the specified `pattern` and `searchArea`. Returns a `TreeSearchCursor`, which contains all matches and methods to jump the focus between the matches.
-
-*   `openLimit` is `1` by default. But can be `Infinity` or any number.
-*   `searchArea` describes where the pattern should be searched. Has the following options:
-    *   `'all'` search in keys and values (default)
-    *   `'keys'` search only in keys
-    *   `'values'` search only in values
 
 ### `JsonNodeElement` Events
 
@@ -163,9 +171,7 @@ Fires when the user clicks on the Copy Path link of a node.
 
 ## Future TODOs
 
-*   Fix highlight all on search and not only the first
 *   Improve display of large strings.
-*   Run the parser in a WebWorker
 *   Support JSON Schema. If provided show meta information from the schema definition.
 
 ## License

@@ -14,6 +14,7 @@ import {
   WorkerClientMock
 } from './helpers/worker-client';
 import { forEachMatchFromString } from './parser/json-node-search';
+import { initWorker } from './worker/big-json-viewer.worker.inline';
 
 declare var require: any;
 
@@ -82,7 +83,7 @@ export class BigJsonViewerDom {
       try {
         const worker = this.options.workerPath
           ? new Worker(this.options.workerPath)
-          : new Worker('./worker/big-json-viewer.worker.ts');
+          : initWorker();
         const client = new WorkerClient(worker);
         await client.initWorker();
         this.workerClient = client;
