@@ -15,19 +15,19 @@ export class WorkerClient implements WorkerClientApi {
   public initWorker(): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.worker.onmessage = msg => {
-        if (msg._init === true) {
+        const data = msg.data;
+        if (data._init === true) {
           this.initialized = true;
           resolve(true);
           return;
         }
         if (
-          msg.data &&
-          msg.data.resultId &&
-          this.requestCallbacks[msg.data.resultId]
+          data.resultId &&
+          this.requestCallbacks[data.resultId]
         ) {
-          const callb = this.requestCallbacks[msg.data.resultId];
-          delete this.requestCallbacks[msg.data.resultId];
-          callb(msg.data);
+          const callb = this.requestCallbacks[data.resultId];
+          delete this.requestCallbacks[data.resultId];
+          callb(data);
         }
       };
       this.worker.onerror = e => {
@@ -37,7 +37,7 @@ export class WorkerClient implements WorkerClientApi {
           console.error('Worker error', e);
         }
       };
-      this.worker.postMessage({_init: true});
+      this.worker.postMessage({ _init: true });
     });
   }
 
