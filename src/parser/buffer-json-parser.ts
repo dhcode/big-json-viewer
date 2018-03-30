@@ -1,4 +1,4 @@
-import {JsonNodeInfo, NodeType} from './json-node-info';
+import { JsonNodeInfo, NodeType } from './json-node-info';
 
 const BRACE_START = '{'.charCodeAt(0);
 const BRACE_END = '}'.charCodeAt(0);
@@ -30,7 +30,6 @@ const NULL = 'null'.split('').map(d => d.charCodeAt(0));
 const TRUE = 'true'.split('').map(d => d.charCodeAt(0));
 const FALSE = 'false'.split('').map(d => d.charCodeAt(0));
 
-
 export interface ParseContext {
   path: string[];
   start?: number;
@@ -40,7 +39,7 @@ export interface ParseContext {
   objectNodes?: BufferJsonNodeInfo[]; // truthy if nodes should be resolved
   arrayNodes?: BufferJsonNodeInfo[]; // truthy if nodes should be resolved
   value?: string | number | boolean; // truthy if value should be resolved
-  nodeInfo?: BufferJsonNodeInfo;  // truthy if node info should be filled
+  nodeInfo?: BufferJsonNodeInfo; // truthy if node info should be filled
 }
 
 export class BufferJsonNodeInfo implements JsonNodeInfo {
@@ -107,7 +106,7 @@ export class BufferJsonNodeInfo implements JsonNodeInfo {
     if (this.type === 'object') {
       const ctx: ParseContext = {
         path: this.path,
-        objectKey: key,
+        objectKey: key
       };
       this.parser.parseObject(this.index, ctx);
       return ctx.objectNodes ? ctx.objectNodes[0] : undefined;
@@ -187,7 +186,6 @@ export class BufferJsonNodeInfo implements JsonNodeInfo {
   }
 }
 
-
 declare const TextEncoder;
 
 /**
@@ -199,9 +197,9 @@ export class BufferJsonParser {
   constructor(data: ArrayBuffer | string) {
     if (data instanceof ArrayBuffer) {
       this.data = new Uint16Array(data);
-    } else if (typeof(data) === 'string' && typeof(TextEncoder) !== 'undefined') {
+    } else if (typeof data === 'string' && typeof TextEncoder !== 'undefined') {
       this.data = new TextEncoder().encode(data);
-    } else if (typeof(data) === 'string') {
+    } else if (typeof data === 'string') {
       this.data = new Uint16Array(new ArrayBuffer(data.length * 2));
       for (let i = 0; i < data.length; i++) {
         this.data[i] = data.charCodeAt(i);
@@ -249,7 +247,9 @@ export class BufferJsonParser {
     }
 
     if (throwUnknown) {
-      throw new Error(`parse value unknown token ${bufToString(char)} at ${start}`);
+      throw new Error(
+        `parse value unknown token ${bufToString(char)} at ${start}`
+      );
     }
 
     function isString(char) {
@@ -257,10 +257,9 @@ export class BufferJsonParser {
     }
 
     function isNumber(char) {
-      return char === MINUS || char >= DIGIT_0 && char <= DIGIT_9;
+      return char === MINUS || (char >= DIGIT_0 && char <= DIGIT_9);
     }
   }
-
 
   parseObject(start: number, ctx?: ParseContext): number {
     let index = start + 1; // skip the start brace
@@ -287,7 +286,11 @@ export class BufferJsonParser {
 
       index = this.skipIgnored(index);
       if (this.data[index] !== COLON) {
-        throw new Error(`parse object unexpected token ${bufToString(this.data[index])} at ${index}. Expected :`);
+        throw new Error(
+          `parse object unexpected token ${bufToString(
+            this.data[index]
+          )} at ${index}. Expected :`
+        );
       } else {
         index++;
       }
@@ -295,10 +298,17 @@ export class BufferJsonParser {
       index = this.skipIgnored(index);
 
       let valueCtx: ParseContext = null;
-      if (keyCtx && ctx && (ctx.objectNodes || keyCtx.value === ctx.objectKey)) {
+      if (
+        keyCtx &&
+        ctx &&
+        (ctx.objectNodes || keyCtx.value === ctx.objectKey)
+      ) {
         valueCtx = {
           path: ctx.path,
-          nodeInfo: new BufferJsonNodeInfo(this, index, [...ctx.path, keyCtx.value as string])
+          nodeInfo: new BufferJsonNodeInfo(this, index, [
+            ...ctx.path,
+            keyCtx.value as string
+          ])
         };
       }
 
@@ -317,7 +327,11 @@ export class BufferJsonParser {
       if (this.data[index] === COMMA) {
         index++;
       } else if (this.data[index] !== BRACE_END) {
-        throw new Error(`parse object unexpected token ${bufToString(this.data[index])} at ${index}. Expected , or }`);
+        throw new Error(
+          `parse object unexpected token ${bufToString(
+            this.data[index]
+          )} at ${index}. Expected , or }`
+        );
       }
     }
 
@@ -334,10 +348,17 @@ export class BufferJsonParser {
     }
 
     function getKeyContext(keyIndex): ParseContext {
-      if (!ctx || ctx.start && keyIndex < ctx.start || ctx.limit && keyIndex >= ctx.start + ctx.limit) {
+      if (
+        !ctx ||
+        (ctx.start && keyIndex < ctx.start) ||
+        (ctx.limit && keyIndex >= ctx.start + ctx.limit)
+      ) {
         return null;
       }
-      if (ctx && (ctx.objectKeys || ctx.objectNodes || ctx.objectKey !== undefined)) {
+      if (
+        ctx &&
+        (ctx.objectKeys || ctx.objectNodes || ctx.objectKey !== undefined)
+      ) {
         return {
           path: ctx.path,
           value: null
@@ -366,7 +387,10 @@ export class BufferJsonParser {
       if (isInRange(length) && ctx.arrayNodes) {
         valueCtx = {
           path: ctx.path,
-          nodeInfo: new BufferJsonNodeInfo(this, index, [...ctx.path, length.toString()])
+          nodeInfo: new BufferJsonNodeInfo(this, index, [
+            ...ctx.path,
+            length.toString()
+          ])
         };
       }
 
@@ -383,7 +407,11 @@ export class BufferJsonParser {
       if (this.data[index] === COMMA) {
         index++;
       } else if (this.data[index] !== BRACKET_END) {
-        throw new Error(`parse array unexpected token ${bufToString(this.data[index])} at ${index}. Expected , or ]`);
+        throw new Error(
+          `parse array unexpected token ${bufToString(
+            this.data[index]
+          )} at ${index}. Expected , or ]`
+        );
       }
     }
 
@@ -394,7 +422,11 @@ export class BufferJsonParser {
     }
 
     function isInRange(keyIndex): boolean {
-      return !(!ctx || ctx.start && keyIndex < ctx.start || ctx.limit && keyIndex >= ctx.start + ctx.limit);
+      return !(
+        !ctx ||
+        (ctx.start && keyIndex < ctx.start) ||
+        (ctx.limit && keyIndex >= ctx.start + ctx.limit)
+      );
     }
 
     return index;
@@ -402,8 +434,10 @@ export class BufferJsonParser {
 
   parseString(start: number, ctx?: ParseContext): number {
     let index = start;
-    const expect = this.data[index] === DOUBLE_QUOTE ? DOUBLE_QUOTE : SINGLE_QUOTE;
-    let esc = false, length = 0;
+    const expect =
+      this.data[index] === DOUBLE_QUOTE ? DOUBLE_QUOTE : SINGLE_QUOTE;
+    let esc = false,
+      length = 0;
     for (index++; index <= this.data.length; index++) {
       if (index === this.data.length) {
         throw new Error(`parse string incomplete at end`);
@@ -470,7 +504,11 @@ export class BufferJsonParser {
     let index = start;
     for (let i = 0; i < chars.length; i++) {
       if (this.data[index] !== chars[i]) {
-        throw new Error(`Unexpected token ${bufToString(this.data[index])} at ${index}. Expected ${bufToString(chars)}`);
+        throw new Error(
+          `Unexpected token ${bufToString(
+            this.data[index]
+          )} at ${index}. Expected ${bufToString(chars)}`
+        );
       }
       index++;
     }
@@ -503,9 +541,8 @@ export class BufferJsonParser {
   }
 }
 
-
 function bufToString(buf: number | number[] | Uint16Array) {
-  if (typeof(buf) === 'number') {
+  if (typeof buf === 'number') {
     buf = [buf];
   }
   return String.fromCharCode.apply(null, buf);

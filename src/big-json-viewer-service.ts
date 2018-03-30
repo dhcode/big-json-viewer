@@ -1,10 +1,16 @@
-import {searchJsonNodes} from './parser/json-node-search';
-import {BigJsonViewerNode, TreeSearchAreaOption, TreeSearchMatch} from './model/big-json-viewer.model';
-import {BufferJsonNodeInfo, BufferJsonParser} from './parser/buffer-json-parser';
-import {JsonNodeInfo} from './parser/json-node-info';
+import { searchJsonNodes } from './parser/json-node-search';
+import {
+  BigJsonViewerNode,
+  TreeSearchAreaOption,
+  TreeSearchMatch
+} from './model/big-json-viewer.model';
+import {
+  BufferJsonNodeInfo,
+  BufferJsonParser
+} from './parser/buffer-json-parser';
+import { JsonNodeInfo } from './parser/json-node-info';
 
 export class BigJsonViewerService {
-
   rootNode: BufferJsonNodeInfo;
 
   initWithData(data: ArrayBuffer | string): BigJsonViewerNode {
@@ -54,5 +60,4 @@ export class BigJsonViewerService {
   protected isOpenableNode(node: JsonNodeInfo): boolean {
     return (node.type === 'array' || node.type === 'object') && !!node.length;
   }
-
 }

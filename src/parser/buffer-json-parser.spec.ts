@@ -1,14 +1,13 @@
-import {BufferJsonNodeInfo, BufferJsonParser} from './buffer-json-parser';
+import { BufferJsonNodeInfo, BufferJsonParser } from './buffer-json-parser';
 
-describe('JSON Parser', function () {
-
-  it('should handle empty input', function () {
+describe('JSON Parser', function() {
+  it('should handle empty input', function() {
     const instance = new BufferJsonParser('');
     const info = instance.getRootNodeInfo();
     expect(info).toBeNull();
   });
 
-  it('should handle empty object', function () {
+  it('should handle empty object', function() {
     const instance = new BufferJsonParser('{}');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('object');
@@ -25,7 +24,7 @@ describe('JSON Parser', function () {
     expect(nodes.length).toEqual(0);
   });
 
-  it('should handle empty string', function () {
+  it('should handle empty string', function() {
     const instance = new BufferJsonParser('""');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('string');
@@ -35,7 +34,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual('');
   });
 
-  it('should handle number', function () {
+  it('should handle number', function() {
     const instance = new BufferJsonParser('43246');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('number');
@@ -44,7 +43,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual(43246);
   });
 
-  it('should handle negative number', function () {
+  it('should handle negative number', function() {
     const instance = new BufferJsonParser('-343');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('number');
@@ -53,7 +52,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual(-343);
   });
 
-  it('should handle negative number with e', function () {
+  it('should handle negative number with e', function() {
     const instance = new BufferJsonParser('-34e3');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('number');
@@ -62,7 +61,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual(-34e3);
   });
 
-  it('should handle string', function () {
+  it('should handle string', function() {
     const instance = new BufferJsonParser('"abc"');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('string');
@@ -72,7 +71,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual('abc');
   });
 
-  it('should handle string with special chars', function () {
+  it('should handle string with special chars', function() {
     const instance = new BufferJsonParser('"abc\\nxy\\\\z"');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('string');
@@ -82,7 +81,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual('abc\nxy\\z');
   });
 
-  it('should handle null', function () {
+  it('should handle null', function() {
     const instance = new BufferJsonParser('null');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('null');
@@ -91,7 +90,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual(null);
   });
 
-  it('should handle true', function () {
+  it('should handle true', function() {
     const instance = new BufferJsonParser('true');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('boolean');
@@ -100,7 +99,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual(true);
   });
 
-  it('should handle false', function () {
+  it('should handle false', function() {
     const instance = new BufferJsonParser('false');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('boolean');
@@ -109,7 +108,7 @@ describe('JSON Parser', function () {
     expect(info.getValue()).toEqual(false);
   });
 
-  it('should handle object with one key', function () {
+  it('should handle object with one key', function() {
     const instance = new BufferJsonParser('{"key1": "value1"}');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('object');
@@ -126,10 +125,9 @@ describe('JSON Parser', function () {
     expect(nodes).toBeTruthy();
     expect(nodes.length).toEqual(1);
     expectStringNode(nodes[0], 'value1', 8, ['key1']);
-
   });
 
-  it('should handle object with multi keys', function () {
+  it('should handle object with multi keys', function() {
     const instance = new BufferJsonParser('{"key1": "value1","key2": []}');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('object');
@@ -159,10 +157,9 @@ describe('JSON Parser', function () {
 
     node = info.getByKey('key1');
     expectStringNode(node, 'value1', 8, ['key1']);
-
   });
 
-  it('should handle empty array', function () {
+  it('should handle empty array', function() {
     const instance = new BufferJsonParser('[]');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('array');
@@ -174,7 +171,7 @@ describe('JSON Parser', function () {
     expect(nodes.length).toEqual(0);
   });
 
-  it('should handle array with elements', function () {
+  it('should handle array with elements', function() {
     const instance = new BufferJsonParser('[0, "ac"]');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('array');
@@ -187,10 +184,9 @@ describe('JSON Parser', function () {
 
     expectNumberNode(nodes[0], 0, 1, ['0']);
     expectStringNode(nodes[1], 'ac', 4, ['1']);
-
   });
 
-  it('should handle array with tokens', function () {
+  it('should handle array with tokens', function() {
     const instance = new BufferJsonParser('[true, false, null]');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('array');
@@ -215,11 +211,9 @@ describe('JSON Parser', function () {
     expect(nodes[2].chars).toEqual(4);
     expect(nodes[2].getValue()).toEqual(null);
     expect(nodes[2].path.length).toEqual(1);
-
-
   });
 
-  it('should handle array pagination', function () {
+  it('should handle array pagination', function() {
     const instance = new BufferJsonParser('["a", "b", "c", "d", "e"]');
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('array');
@@ -239,11 +233,12 @@ describe('JSON Parser', function () {
     expect(nodes.length).toEqual(2);
     expectStringNode(nodes[0], 'd', 3, ['3']);
     expectStringNode(nodes[1], 'e', 3, ['4']);
-
   });
 
-  it('should handle object pagination', function () {
-    const instance = new BufferJsonParser('{"a": "A", "b": "B", "c": "C", "d": "D"}');
+  it('should handle object pagination', function() {
+    const instance = new BufferJsonParser(
+      '{"a": "A", "b": "B", "c": "C", "d": "D"}'
+    );
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('object');
     expect(info.length).toEqual(4);
@@ -265,11 +260,12 @@ describe('JSON Parser', function () {
 
     const node = info.getByIndex(1);
     expectStringNode(node, 'B', 3, ['b']);
-
   });
 
-  it('should handle nested objects', function () {
-    const instance = new BufferJsonParser('{"a": {"b": {"c": true, "d": "D"}}}');
+  it('should handle nested objects', function() {
+    const instance = new BufferJsonParser(
+      '{"a": {"b": {"c": true, "d": "D"}}}'
+    );
     const info = instance.getRootNodeInfo();
     expect(info.type).toEqual('object');
     expect(info.length).toEqual(1);
@@ -307,28 +303,36 @@ describe('JSON Parser', function () {
 
     expect(info.getByPath('a.b.e'.split('.'))).toBeUndefined();
     expect(info.getByPath([])).toEqual(info);
-
-
   });
 
-  it('should throw on incomplete object', function () {
+  it('should throw on incomplete object', function() {
     const instance = new BufferJsonParser('{');
-    expect(() => instance.getRootNodeInfo()).toThrowError('parse object incomplete at end');
+    expect(() => instance.getRootNodeInfo()).toThrowError(
+      'parse object incomplete at end'
+    );
   });
 
-  it('should throw on incomplete array', function () {
+  it('should throw on incomplete array', function() {
     const instance = new BufferJsonParser('{"d": ["sd",}');
-    expect(() => instance.getRootNodeInfo()).toThrowError('parse value unknown token } at 12');
+    expect(() => instance.getRootNodeInfo()).toThrowError(
+      'parse value unknown token } at 12'
+    );
   });
 
-  it('should throw on incomplete string', function () {
+  it('should throw on incomplete string', function() {
     const instance = new BufferJsonParser('"abc');
-    expect(() => instance.getRootNodeInfo()).toThrowError('parse string incomplete at end');
+    expect(() => instance.getRootNodeInfo()).toThrowError(
+      'parse string incomplete at end'
+    );
   });
-
 });
 
-function expectStringNode(node: BufferJsonNodeInfo, value: string, chars: number, path: string[]) {
+function expectStringNode(
+  node: BufferJsonNodeInfo,
+  value: string,
+  chars: number,
+  path: string[]
+) {
   expect(node.type).toEqual('string', 'Node type');
   expect(node.length).toEqual(value.length, 'Node length');
   expect(node.chars).toEqual(chars, 'Node chars');
@@ -339,7 +343,12 @@ function expectStringNode(node: BufferJsonNodeInfo, value: string, chars: number
   expect(node.getValue()).toEqual(value, 'Node value');
 }
 
-function expectNumberNode(node: BufferJsonNodeInfo, value: number, chars: number, path: string[]) {
+function expectNumberNode(
+  node: BufferJsonNodeInfo,
+  value: number,
+  chars: number,
+  path: string[]
+) {
   expect(node.type).toEqual('number', 'Node type');
   expect(node.chars).toEqual(chars, 'Node chars');
   expect(node.path.length).toEqual(path.length, 'Node Path Length');

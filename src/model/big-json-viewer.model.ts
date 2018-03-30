@@ -1,4 +1,4 @@
-import {JsonNodeInfoBase} from '../parser/json-node-info';
+import { JsonNodeInfoBase } from '../parser/json-node-info';
 
 /**
  * Represents an interactive node in the Big Json Viewer
@@ -24,17 +24,19 @@ export interface JsonNodesStubElement extends HTMLDivElement {
 }
 
 export type BigJsonViewerEvent =
-  'openNode' // when the user opens a single node
+  | 'openNode' // when the user opens a single node
   | 'closeNode' // when the user closes a node
   | 'openedNodes' // when multiple nodes were opened e.g. by expand all or search
   | 'openStub' // when the user opens a single stub
   | 'closeStub' // when the user closed a stub
   | 'copyPath';
-export type PaginatedOption = 'first' // open only the first pagination stub
+export type PaginatedOption =
+  | 'first' // open only the first pagination stub
   | 'all' // open all pagination stubs
   | 'none';
 
-export type TreeSearchAreaOption = 'all' // search in keys and values
+export type TreeSearchAreaOption =
+  | 'all' // search in keys and values
   | 'keys' // search only in keys
   | 'values';
 
@@ -104,4 +106,9 @@ export interface BigJsonViewerOptions {
    * Set null to disable this link
    */
   linkLabelExpandAll?: string;
+
+  /**
+   * Path to the worker bundle, null by default
+   */
+  workerPath?: string;
 }

@@ -7,20 +7,38 @@ export interface WorkerClientApi {
 export class WorkerClient implements WorkerClientApi {
   private requestIndex = 0;
   private requestCallbacks = {};
+  private initialized;
 
   constructor(private worker) {
-    this.initWorker();
   }
 
-  private initWorker() {
-    this.worker.onmessage = msg => {
-      if (msg.data && msg.data.resultId && this.requestCallbacks[msg.data.resultId]) {
-        const callb = this.requestCallbacks[msg.data.resultId];
-        delete this.requestCallbacks[msg.data.resultId];
-        callb(msg.data);
-      }
-    };
-    this.worker.onerror = e => console.error(e);
+  public initWorker(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.worker.onmessage = msg => {
+        if (msg._init === true) {
+          this.initialized = true;
+          resolve(true);
+          return;
+        }
+        if (
+          msg.data &&
+          msg.data.resultId &&
+          this.requestCallbacks[msg.data.resultId]
+        ) {
+          const callb = this.requestCallbacks[msg.data.resultId];
+          delete this.requestCallbacks[msg.data.resultId];
+          callb(msg.data);
+        }
+      };
+      this.worker.onerror = e => {
+        if (!this.initialized) {
+          reject(e);
+        } else {
+          console.error('Worker error', e);
+        }
+      };
+      this.worker.postMessage({_init: true});
+    });
   }
 
   public call(handler, ...args): Promise<any> {
@@ -30,21 +48,23 @@ export class WorkerClient implements WorkerClientApi {
   public callWorker(handler, transfers = undefined, ...args): Promise<any> {
     return new Promise((resolve, reject) => {
       const resultId = ++this.requestIndex;
-      this.requestCallbacks[resultId] = (data) => {
+      this.requestCallbacks[resultId] = data => {
         if (data.error !== undefined) {
           reject(data.error);
           return;
         }
         resolve(data.result);
       };
-      this.worker.postMessage({
-        handler: handler,
-        args: args,
-        resultId: resultId
-      }, transfers);
+      this.worker.postMessage(
+        {
+          handler: handler,
+          args: args,
+          resultId: resultId
+        },
+        transfers
+      );
     });
   }
-
 }
 
 export class WorkerClientMock implements WorkerClientApi {

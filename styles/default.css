@@ -23,6 +23,7 @@
   background-color: rgba(199, 193, 0, 0.5);
   padding: 0;
 }
+
 .json-node-header mark.highlight-active {
   background-color: rgba(199, 103, 46, 0.5);
 }
@@ -98,9 +99,11 @@
   color: #7f7f7f;
   text-decoration: none;
 }
+
 .json-node-link:hover {
   color: black;
 }
+
 .json-node-header:hover .json-node-link {
   display: inline;
 }

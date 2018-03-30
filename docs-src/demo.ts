@@ -1,5 +1,5 @@
 import 'babel-polyfill';
-import {BigJsonViewerDom, JsonNodeElement} from '../src';
+import { BigJsonViewerDom, JsonNodeElement } from '../src';
 
 const demoData = {
   simpleData: {
@@ -11,18 +11,18 @@ const demoData = {
       true,
       false,
       null,
-      {name: 'special'},
-      {},
+      { name: 'special' },
+      {}
     ],
     element4: [],
     element5: 'this should be some long text\nwith line break',
     element6: {
       name: 'Hero',
       age: 32,
-      birthday: {year: 1986, month: 4, day: 30}
+      birthday: { year: 1986, month: 4, day: 30 }
     }
   },
-  largeData: (function () {
+  largeData: (function() {
     const list = new Array(Math.floor(Math.random() * 1000));
     for (let i = 0; i < list.length; i++) {
       list[i] = Math.random();

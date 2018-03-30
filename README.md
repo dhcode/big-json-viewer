@@ -1,8 +1,7 @@
 # Big JSON Viewer
 
-
 [![npm](https://img.shields.io/npm/v/big-json-viewer.svg)](https://www.npmjs.com/package/big-json-viewer)
-
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://www.npmjs.com/package/big-json-viewer)
 
 A JavaScript library that enables efficient working with large JSON data in the browser.
 
@@ -14,7 +13,6 @@ No dependencies, works directly on the DOM API. Runs in any modern browser and I
 
 [View the Demo](https://dhcode.github.io/big-json-viewer/)
 
-
 ## Usage
 
     npm install big-json-viewer
@@ -22,17 +20,22 @@ No dependencies, works directly on the DOM API. Runs in any modern browser and I
 ## Example usage
 
 test.ts
+
 ```typescript
 import { BigJsonViewer } from 'big-json-viewer';
 
-document.body.appendChild(BigJsonViewer.elementFromData(JSON.stringify({
-  test: 23,
-  someArray: [45,2,5,true,false,null]
-})));
-
+document.body.appendChild(
+    BigJsonViewer.elementFromData(
+        JSON.stringify({
+            test: 23,
+            someArray: [45, 2, 5, true, false, null]
+        })
+    )
+);
 ```
 
 index.html
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -45,12 +48,11 @@ index.html
 <script src="src/test.ts"></script>
 </body>
 </html>
-````
+```
 
 Example run with `parcel` (`npm install -D parce-bundler`);
 
     parcel index.html
-
 
 ## Getting started
 
@@ -59,9 +61,8 @@ You want to use the static method to display a JSON.
 ```typescript
 BigJsonViewer.elementFromData(data: ArrayBuffer | string, options?: BigJsonViewerOptions): JsonNodeElement
 ```
-    
-It returns a `JsonNodeElement` object, that is an `HTMLDivElement` with some extras. You can insert it anywhere in your DOM.
 
+It returns a `JsonNodeElement` object, that is an `HTMLDivElement` with some extras. You can insert it anywhere in your DOM.
 
 ## Options
 
@@ -81,57 +82,48 @@ Example:
 
 ## `JsonNodeElement` methods
 
-
 #### `openNode()`
 
 Opens the node in case it is an openable node. No event is fired.
-
 
 #### `closeNode()`
 
 Closes the node in case it is open. No event is fired.
 
-
 #### `toggleNode()`
 
 Toggles the open state of the node. Either opens or closes it. No event is fired.
-
 
 #### `openPath(path: string[]): JsonNodeElement`
 
 Opens the specified path and returns the opened node, in case it was found.
 
-
 #### `openAll(maxDepth?: number, paginated?: PaginatedOption): number`
 
 Opens all nodes until the defined depth. Returns the number of opened nodes.
 
-* `maxDepth` is `Infinity` by default
-* `paginated` is a string of the following options
-    * `'first'` open only the first pagination stub (default)
-    * `'all'` open all pagination stubs
-    * `'none'` open no pagination stubs
-
+*   `maxDepth` is `Infinity` by default
+*   `paginated` is a string of the following options
+    *   `'first'` open only the first pagination stub (default)
+    *   `'all'` open all pagination stubs
+    *   `'none'` open no pagination stubs
 
 #### `getOpenPaths(withStubs?: boolean): string[][]`
 
 Returns a list of opened paths.
 `withStubs` is `true` by default. It makes sure, that paginated stubs that are opened are considered.
 
-When you have a limit of 50 nodes and you open the second stub `[50 ... 99]`, a path it retuned that contains the name of the first node in the stub. 
-
+When you have a limit of 50 nodes and you open the second stub `[50 ... 99]`, a path it retuned that contains the name of the first node in the stub.
 
 #### `openBySearch(pattern: RegExp, openLimit?: number, searchArea?: TreeSearchAreaOption): TreeSearchCursor;`
 
 Searches the tree by the specified `pattern` and `searchArea`. Returns a `TreeSearchCursor`, which contains all matches and methods to jump the focus between the matches.
 
-* `openLimit` is `1` by default. But can be `Infinity` or any number.
-* `searchArea` describes where the pattern should be searched. Has the following options:
-    * `'all'` search in keys and values (default)
-    * `'keys'` search only in keys
-    * `'values'` search only in values
-
-
+*   `openLimit` is `1` by default. But can be `Infinity` or any number.
+*   `searchArea` describes where the pattern should be searched. Has the following options:
+    *   `'all'` search in keys and values (default)
+    *   `'keys'` search only in keys
+    *   `'values'` search only in values
 
 ### `JsonNodeElement` Events
 
@@ -142,9 +134,10 @@ The following events are being fired on the visible DOM elements. The events bub
 Fires when a node is being opened by the user directly with a click. The target is a `JsonNodeElement`.
 
 Example logs the opened path:
+
 ```javascript
 rootNode1.addEventListener('openNode', function(e) {
-  console.log('openNode', e.target.jsonNode.path);
+    console.log('openNode', e.target.jsonNode.path);
 });
 ```
 
@@ -154,7 +147,7 @@ Fires when a node is being closed. The target is a `JsonNodeElement`.
 
 #### openedNodes
 
-Fires when multiple nodes have been opened. Target is the top level `JsonNodeElement` that was used to trigger the action. E.g. when the user clicks the *Expand all* link.
+Fires when multiple nodes have been opened. Target is the top level `JsonNodeElement` that was used to trigger the action. E.g. when the user clicks the _Expand all_ link.
 
 #### openStub
 
@@ -168,18 +161,13 @@ Fires when a pagination stub is being closed. The target is a `JsonNodesStubElem
 
 Fires when the user clicks on the Copy Path link of a node.
 
-
 ## Future TODOs
 
-* Fix highlight all on search and not only the first
-* Improve display of large strings.
-* Run the parser in a WebWorker
-* Support JSON Schema. If provided show meta information from the schema definition.
-
+*   Fix highlight all on search and not only the first
+*   Improve display of large strings.
+*   Run the parser in a WebWorker
+*   Support JSON Schema. If provided show meta information from the schema definition.
 
 ## License
 
 [MIT](LICENSE)
-
-
-

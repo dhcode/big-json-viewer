@@ -5,11 +5,11 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "preversion": "tsc",
+    "build": "tsc && parcel build src/browser-index.ts --no-minify",
+    "prepack": "npm run build",
     "build-docs": "parcel build docs-src/index.html --out-dir docs --public-url ./",
     "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp",
-    "build-worker": "parcel build src/worker/json-parser.worker.ts --out-dir dist/worker --no-minify",
+    "build-worker": "parcel build src/worker/big-json-viewer.worker.ts --out-dir dist",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "jest",
     "publish-patch": "npm version patch && npm publish",
@@ -34,7 +34,8 @@
     "babel-polyfill": "^6.26.0",
     "jasmine-core": "^2.99.1",
     "jest": "^22.4.3",
-    "parcel-bundler": "^1.6.2",
+    "parcel-bundler": "file:../../github/parcel/parcel-bundler-v1.7.0.tgz",
+    "prettier": "^1.11.1",
     "ts-jest": "^22.4.2",
     "tslint": "^5.9.1",
     "typescript": "^2.7.2"
@@ -54,5 +55,8 @@
       "json",
       "node"
     ]
+  },
+  "prettier": {
+    "singleQuote": true
   }
 }

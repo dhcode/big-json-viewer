@@ -1,4 +1,10 @@
-export type NodeType = 'string' | 'number' | 'array' | 'object' | 'boolean' | 'null';
+export type NodeType =
+  | 'string'
+  | 'number'
+  | 'array'
+  | 'object'
+  | 'boolean'
+  | 'null';
 
 export interface JsonNodeInfoBase {
   readonly type: NodeType;
@@ -7,7 +13,6 @@ export interface JsonNodeInfoBase {
 }
 
 export interface JsonNodeInfo extends JsonNodeInfoBase {
-
   /**
    * Returns the list of keys in case of an object for the defined range
    * @param {number} start
