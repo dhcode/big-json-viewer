@@ -2,6 +2,8 @@ export interface WorkerClientApi {
   call(handler: string, ...args): Promise<any>;
 
   callWorker(handler: string, transfers: any[], ...args): Promise<any>;
+
+  destroy();
 }
 
 export class WorkerClient implements WorkerClientApi {
@@ -9,8 +11,7 @@ export class WorkerClient implements WorkerClientApi {
   private requestCallbacks = {};
   private initialized;
 
-  constructor(private worker) {
-  }
+  constructor(private worker: Worker) {}
 
   public initWorker(): Promise<boolean> {
     return new Promise((resolve, reject) => {
@@ -21,10 +22,7 @@ export class WorkerClient implements WorkerClientApi {
           resolve(true);
           return;
         }
-        if (
-          data.resultId &&
-          this.requestCallbacks[data.resultId]
-        ) {
+        if (data.resultId && this.requestCallbacks[data.resultId]) {
           const callb = this.requestCallbacks[data.resultId];
           delete this.requestCallbacks[data.resultId];
           callb(data);
@@ -65,11 +63,16 @@ export class WorkerClient implements WorkerClientApi {
       );
     });
   }
+
+  public destroy() {
+    this.worker.terminate();
+    this.worker = null;
+    this.requestCallbacks = null;
+  }
 }
 
 export class WorkerClientMock implements WorkerClientApi {
-  constructor(private provider) {
-  }
+  constructor(private provider) {}
 
   public call(handler, ...args): Promise<any> {
     return this.callWorker(handler, undefined, ...args);
@@ -79,5 +82,8 @@ export class WorkerClientMock implements WorkerClientApi {
     return new Promise(resolve => {
       resolve(this.provider[handler].apply(this.provider, args));
     });
+  }
+  public destroy() {
+    this.provider = null;
   }
 }

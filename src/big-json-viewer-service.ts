@@ -48,7 +48,6 @@ export class BigJsonViewerService {
       type: node.type,
       length: node.length,
       path: node.path,
-      open: false,
       openable: this.isOpenableNode(node)
     };
     if (!info.openable) {

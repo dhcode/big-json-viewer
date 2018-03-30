@@ -5,24 +5,20 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc && parcel build src/browser-index.ts --no-minify",
+    "build": "tsc && parcel build src/browser-api.ts --no-minify",
     "prepack": "npm run build",
-    "build-docs": "parcel build docs-src/index.html --out-dir docs --public-url ./",
-    "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp",
-    "build-worker": "parcel build src/worker/big-json-viewer.worker.ts --out-dir dist",
+    "build-docs":
+      "parcel build docs-src/index.html --out-dir docs --public-url ./",
+    "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp --no-hmr",
+    "build-worker":
+      "parcel build src/worker/big-json-viewer.worker.ts --out-dir dist",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "jest",
     "publish-patch": "npm version patch && npm publish",
-    "publish-minor": "npm version minor && npm publish"
+    "publish-minor": "npm version minor && npm publish",
+    "precommit": "pretty-quick"
   },
-  "keywords": [
-    "JSON",
-    "JavaScript",
-    "TypeScript",
-    "big",
-    "JSON",
-    "viewer"
-  ],
+  "keywords": ["JSON", "JavaScript", "TypeScript", "big", "JSON", "viewer"],
   "author": "Dominik Herbst",
   "license": "MIT",
   "repository": {
@@ -32,10 +28,12 @@
   "devDependencies": {
     "@types/jest": "^22.2.2",
     "babel-polyfill": "^6.26.0",
+    "husky": "^0.14.3",
     "jasmine-core": "^2.99.1",
     "jest": "^22.4.3",
     "parcel-bundler": "file:../../github/parcel/parcel-bundler-v1.7.0.tgz",
     "prettier": "^1.11.1",
+    "pretty-quick": "^1.4.1",
     "ts-jest": "^22.4.2",
     "tslint": "^5.9.1",
     "typescript": "^2.7.2"
@@ -47,14 +45,7 @@
       "^.+\\.tsx?$": "ts-jest"
     },
     "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json",
-      "node"
-    ]
+    "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
   },
   "prettier": {
     "singleQuote": true

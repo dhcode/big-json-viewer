@@ -4,7 +4,6 @@ import { JsonNodeInfoBase } from '../parser/json-node-info';
  * Represents an interactive node in the Big Json Viewer
  */
 export interface BigJsonViewerNode extends JsonNodeInfoBase {
-  open: boolean;
   openable: boolean;
   value?: any;
   children?: BigJsonViewerNode[];
@@ -112,3 +111,5 @@ export interface BigJsonViewerOptions {
    */
   workerPath?: string;
 }
+
+export interface BigJsonViewer {}

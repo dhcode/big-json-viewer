@@ -5,15 +5,7 @@ const demoData = {
   simpleData: {
     element1: 'str',
     element2: 1234,
-    element3: [
-      23,
-      43,
-      true,
-      false,
-      null,
-      { name: 'special' },
-      {}
-    ],
+    element3: [23, 43, true, false, null, { name: 'special' }, {}],
     element4: [],
     element5: 'this should be some long text\nwith line break',
     element6: {
@@ -38,18 +30,19 @@ const demoData = {
       }
     }
     return list;
-  }())
+  })()
 };
-
 
 const codeElement = document.getElementById('code') as HTMLTextAreaElement;
 const viewerElement = document.getElementById('viewer') as HTMLDivElement;
 const pathsElement = document.getElementById('paths') as HTMLTextAreaElement;
 const copiedElement = document.getElementById('copied') as HTMLInputElement;
 const searchElement = document.getElementById('search') as HTMLInputElement;
-const searchInfoElement = document.getElementById('searchInfo') as HTMLSpanElement;
+const searchInfoElement = document.getElementById(
+  'searchInfo'
+) as HTMLSpanElement;
+let viewer = null;
 let rootNode = document.getElementById('rootNode') as JsonNodeElement;
-
 
 querySelectorArray('[data-load]').forEach((link: any) => {
   const load = link.getAttribute('data-load');
@@ -67,9 +60,10 @@ codeElement.addEventListener('input', e => {
   showData(codeElement.value);
 });
 searchElement.addEventListener('input', async e => {
-  rootNode.closeNode();
   if (searchElement.value.length >= 2) {
-    const cursor = await rootNode.openBySearch(new RegExp(searchElement.value, 'i'));
+    const cursor = await viewer.openBySearch(
+      new RegExp(searchElement.value, 'i')
+    );
     searchInfoElement.textContent = cursor.matches.length + ' matches';
 
     searchInfoElement.appendChild(document.createTextNode(' '));
@@ -92,19 +86,18 @@ searchElement.addEventListener('input', async e => {
     });
     nextBtn.textContent = 'Next';
   } else {
-    rootNode.openBySearch(null);
+    await rootNode.closeNode();
+    viewer.openBySearch(null);
     searchInfoElement.textContent = '';
   }
-
 });
-
 
 loadStructureData(demoData.simpleData);
 
-function loadStructureData(structure) {
+async function loadStructureData(structure) {
   const text = JSON.stringify(structure, null, 2);
   codeElement.value = text;
-  showData(text);
+  await showData(text);
   showPaths();
 }
 
@@ -112,14 +105,16 @@ async function showData(data: string) {
   if (viewerElement.children.length) {
     viewerElement.removeChild(viewerElement.children[0]);
   }
+  if (viewer) {
+    viewer.destroy();
+  }
   try {
-    const viewer = await BigJsonViewerDom.fromData(data);
+    viewer = await BigJsonViewerDom.fromData(data);
     rootNode = viewer.getRootElement();
     rootNode.id = 'rootNode';
     viewerElement.appendChild(rootNode);
-    rootNode.openAll(1);
+    await rootNode.openAll(1);
     setupRootNode();
-
   } catch (e) {
     console.error('BigJsonViewer error', e);
     const errEl = document.createElement('div');
@@ -127,7 +122,6 @@ async function showData(data: string) {
     errEl.appendChild(document.createTextNode(e.toString()));
     viewerElement.appendChild(errEl);
   }
-
 }
 
 function setupRootNode() {
@@ -151,8 +145,10 @@ function showPaths() {
     return;
   }
 
-  pathsElement.value = rootNode.getOpenPaths().map(path => path.join('.')).join('\n');
-
+  pathsElement.value = rootNode
+    .getOpenPaths()
+    .map(path => path.join('.'))
+    .join('\n');
 }
 
 function querySelectorArray(selector: string) {
