@@ -160,7 +160,7 @@ Fires when a node is being opened by the user directly with a click. The target 
 Example logs the opened path:
 
 ```javascript
-rootNode1.addEventListener('openNode', function(e) {
+rootNode.addEventListener('openNode', function(e) {
     console.log('openNode', e.target.jsonNode.path);
 });
 ```
@@ -185,7 +185,15 @@ Fires when a pagination stub is being closed. The target is a `JsonNodesStubElem
 
 Fires when the user clicks on the Copy Path link of a node.
 
-## Future TODOs
+## Contributing
+
+Anyone is welcome to contribute.
+
+If something has changed that affects the Docs/Demo page, run:
+
+    npm run build-docs
+
+### Future TODOs
 
 *   Improve display of large strings.
 *   Support JSON Schema. If provided show meta information from the schema definition.

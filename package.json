@@ -18,7 +18,7 @@
     "test": "jest",
     "publish-patch": "npm version patch && npm publish",
     "publish-minor": "npm version minor && npm publish",
-    "precommit": "pretty-quick --staged && npm run build-docs"
+    "precommit": "pretty-quick --staged"
   },
   "keywords": ["JSON", "JavaScript", "TypeScript", "big", "JSON", "viewer"],
   "author": "Dominik Herbst",
@@ -56,9 +56,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm test",
-      "pre-push": "npm test",
-      "...": "..."
+      "pre-commit": "npm run precommit"
     }
   },
   "dependencies": {}
