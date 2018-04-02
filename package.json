@@ -18,7 +18,7 @@
     "test": "jest",
     "publish-patch": "npm version patch && npm publish",
     "publish-minor": "npm version minor && npm publish",
-    "precommit": "pretty-quick && npm run build-docs"
+    "precommit": "pretty-quick --staged && npm run build-docs"
   },
   "keywords": ["JSON", "JavaScript", "TypeScript", "big", "JSON", "viewer"],
   "author": "Dominik Herbst",

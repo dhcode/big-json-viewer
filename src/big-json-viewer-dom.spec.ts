@@ -24,7 +24,7 @@ describe('Big JSON Viewer', function() {
   });
 
   it('should create DOM from JavaScript simple object', async function() {
-    const viewer = await BigJsonViewerDom.fromObject({ 'a': 5, 'b': true });
+    const viewer = await BigJsonViewerDom.fromObject({ a: 5, b: true });
     const root = viewer.getRootElement();
     expect(root).toBeTruthy();
     await root.openAll();
