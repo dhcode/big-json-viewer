@@ -4,3 +4,4 @@
 /.idea
 /.cache
 /src/worker/big-json-viewer.worker.inline.ts
+/dist
