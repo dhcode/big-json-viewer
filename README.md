@@ -1,6 +1,8 @@
 # Big JSON Viewer
 
 [![npm](https://img.shields.io/npm/v/big-json-viewer.svg)](https://www.npmjs.com/package/big-json-viewer)
+[![Travis](https://img.shields.io/travis/dhcode/big-json-viewer.svg)](https://travis-ci.org/dhcode/big-json-viewer)
+[![Codecov](https://img.shields.io/codecov/c/github/dhcode/big-json-viewer.svg)](https://codecov.io/gh/dhcode/big-json-viewer)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://www.npmjs.com/package/big-json-viewer)
 
 A JavaScript library that enables efficient working with large JSON data in the browser.
