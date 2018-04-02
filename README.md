@@ -39,17 +39,17 @@ index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>Test</title>
+  <meta charset="UTF-8">
+  <title>Test</title>
   <link rel="stylesheet" href="./node_modules/big-json-viewer/styles/default.css">
 </head>
 <body>
-<script src="src/test.ts"></script>
+  <script src="src/test.ts"></script>
 </body>
 </html>
 ```
 
-Example run with `parcel` (`npm install -D parce-bundler`);
+Example run with `parcel` (`npm install -D parcel-bundler`);
 
     parcel index.html
 
