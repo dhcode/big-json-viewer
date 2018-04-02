@@ -9,12 +9,19 @@ import {
   BufferJsonParser
 } from './parser/buffer-json-parser';
 import { JsonNodeInfo } from './parser/json-node-info';
+import { JsParser } from './parser/js-parser';
 
 export class BigJsonViewerService {
-  rootNode: BufferJsonNodeInfo;
+  rootNode: JsonNodeInfo;
 
   initWithData(data: ArrayBuffer | string): BigJsonViewerNode {
     this.rootNode = new BufferJsonParser(data).getRootNodeInfo();
+
+    return this.getRenderInfo(this.rootNode);
+  }
+
+  initWithJs(data: any): BigJsonViewerNode {
+    this.rootNode = new JsParser(data).getRootNodeInfo();
 
     return this.getRenderInfo(this.rootNode);
   }

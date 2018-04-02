@@ -1,4 +1,5 @@
 import { JsonNodeInfo, NodeType } from './json-node-info';
+import { assertStartLimit } from '../helpers/utils';
 
 const BRACE_START = '{'.charCodeAt(0);
 const BRACE_END = '}'.charCodeAt(0);
@@ -7,7 +8,7 @@ const BRACKET_END = ']'.charCodeAt(0);
 const COLON = ':'.charCodeAt(0);
 const COMMA = ','.charCodeAt(0);
 const DOUBLE_QUOTE = '"'.charCodeAt(0);
-const SINGLE_QUOTE = '\''.charCodeAt(0);
+const SINGLE_QUOTE = "'".charCodeAt(0);
 const SPACE = ' '.charCodeAt(0);
 const TAB = '\t'.charCodeAt(0);
 const NEWLINE = '\n'.charCodeAt(0);
@@ -120,7 +121,6 @@ export class BufferJsonNodeInfo implements JsonNodeInfo {
   /**
    * Find the information for a given path
    * @param {string[]} path
-   * @returns {BufferJsonNodeInfo}
    */
   public getByPath(path: string[]): BufferJsonNodeInfo {
     if (!path) {
@@ -139,7 +139,7 @@ export class BufferJsonNodeInfo implements JsonNodeInfo {
   }
 
   /**
-   * Returns a map with the NodeInfo objects for the defined range
+   * Returns a list with the NodeInfo objects for the defined range
    * @param {number} start
    * @param {number} limit
    */
@@ -546,13 +546,4 @@ function bufToString(buf: number | number[] | Uint16Array) {
     buf = [buf];
   }
   return String.fromCharCode.apply(null, buf);
-}
-
-function assertStartLimit(start, limit) {
-  if (isNaN(start) || start < 0) {
-    throw new Error(`Invalid start ${start}`);
-  }
-  if (limit && limit < 0) {
-    throw new Error(`Invalid limit ${limit}`);
-  }
 }

@@ -23,6 +23,18 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
+  it('should create DOM from JavaScript simple object', async function() {
+    const viewer = await BigJsonViewerDom.fromObject({ 'a': 5, 'b': true });
+    const root = viewer.getRootElement();
+    expect(root).toBeTruthy();
+    await root.openAll();
+    expect(root.getOpenPaths()).toEqual([[]]);
+
+    expect(root.childrenElement).toBeTruthy();
+    expect(root.childrenElement.children.length).toEqual(2);
+    viewer.destroy();
+  });
+
   it('should create DOM from more complex object', async function() {
     const data =
       '{"hello": "hello world, is a great world","test": [0,"old world",{"worldgame": true}]}';
@@ -109,6 +121,11 @@ describe('Big JSON Viewer', function() {
     expect(await viewer.openBySearch(null)).toBeNull();
     expect(root.isNodeOpen()).toBeFalsy();
 
+    const cursor2 = await viewer.openBySearch(/old/);
+    expect(cursor2).toBeTruthy();
+    expect(cursor2.matches.length).toEqual(1);
+    expect(root.getOpenPaths()).toEqual([['test']]);
+
     viewer.destroy();
   });
 
@@ -128,6 +145,7 @@ describe('Big JSON Viewer', function() {
     expect(await root.openNode()).toBeTruthy();
     expect(root.childrenElement).toBeTruthy();
     expect(root.childrenElement.children.length).toEqual(3);
+    expect(root.getOpenPaths()).toEqual([[]]);
 
     let stub = root.childrenElement.children[0] as JsonNodesStubElement;
     expect(stub.isNodeOpen()).toBeFalsy();
@@ -135,9 +153,11 @@ describe('Big JSON Viewer', function() {
     expect(await stub.openNode()).toBeTruthy();
     expect(stub.childrenElement).toBeTruthy();
     expect(stub.childrenElement.children.length).toEqual(50);
+    expect(root.getOpenPaths()).toEqual([['0']]);
 
     expect(await stub.closeNode()).toBeTruthy();
     expect(stub.childrenElement).toBeNull();
+    expect(root.getOpenPaths()).toEqual([[]]);
 
     stub = root.childrenElement.children[2] as JsonNodesStubElement;
     expect(stub.isNodeOpen()).toBeFalsy();
@@ -145,13 +165,16 @@ describe('Big JSON Viewer', function() {
     await wait(1);
     expect(stub.childrenElement).toBeTruthy();
     expect(stub.childrenElement.children.length).toEqual(20);
+    expect(root.getOpenPaths()).toEqual([['100']]);
 
     await root.closeNode();
+    expect(root.getOpenPaths()).toEqual([]);
 
     const openedNode = await root.openPath(['61']);
     expect(openedNode).toBeTruthy();
     expect(openedNode.jsonNode.type).toEqual('boolean');
     expect(openedNode.jsonNode.path).toEqual(['61']);
+    expect(root.getOpenPaths()).toEqual([['50']]);
 
     stub = root.childrenElement.children[0] as JsonNodesStubElement;
     expect(stub.isNodeOpen()).toBeFalsy();

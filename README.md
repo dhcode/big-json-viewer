@@ -51,6 +51,12 @@ Example run with `parcel` (`npm install -D parce-bundler`);
 
     parcel index.html
 
+## More examples
+
+See [examples/basic/index.html](examples/basic/index.html) for plain javascript example.
+
+See [docs-src/demo.ts](docs-src/demo.ts) for a more advanced example.
+
 ## Getting started
 
 You can use the following static method to get a new viewer instance:
@@ -77,6 +83,16 @@ Example:
 ```
 
 ## API
+
+## `BigJsonViewerDom` static methods
+
+#### `fromData(data: ArrayBuffer | string, options?: BigJsonViewerOptions): Promise<BigJsonViewerDom>`
+
+Initilizes a new viewer with JSON encoded data
+
+#### `fromObject(data: string | object | null | number | boolean, options?: BigJsonViewerOptions): Promise<BigJsonViewerDom>`
+
+Initializes a new viewer with JavaScript data
 
 ## `BigJsonViewerDom` methods
 

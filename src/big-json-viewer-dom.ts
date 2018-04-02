@@ -63,12 +63,27 @@ export class BigJsonViewerDom {
 
   private rootNode: BigJsonViewerNode;
 
+  /**
+   * Initialized the viewer with JSON encoded data
+   */
   public static async fromData(
     data: ArrayBuffer | string,
     options?: BigJsonViewerOptions
   ): Promise<BigJsonViewerDom> {
     const viewer = new BigJsonViewerDom(options);
     await viewer.setData(data);
+    return viewer;
+  }
+
+  /**
+   * Initializes the viewer with a JavaScript object
+   */
+  public static async fromObject(
+    data: string | object | null | number | boolean,
+    options?: BigJsonViewerOptions
+  ): Promise<BigJsonViewerDom> {
+    const viewer = new BigJsonViewerDom(options);
+    await viewer.setObject(data);
     return viewer;
   }
 
@@ -107,6 +122,12 @@ export class BigJsonViewerDom {
   ): Promise<BigJsonViewerNode> {
     const client = await this.getWorkerClient();
     this.rootNode = await client.call('initWithData', data);
+    return this.rootNode;
+  }
+
+  protected async setObject(data: any): Promise<BigJsonViewerNode> {
+    const client = await this.getWorkerClient();
+    this.rootNode = await client.call('initWithJs', data);
     return this.rootNode;
   }
 

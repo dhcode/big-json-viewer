@@ -1,16 +1,4 @@
-import { BufferJsonParser } from '../parser/buffer-json-parser';
-
-declare interface DedicatedWorkerGlobalScope {
-  onmessage: (this: DedicatedWorkerGlobalScope, ev: MessageEvent) => any;
-
-  close(): void;
-
-  postMessage(message: any, transfer?: any[]): void;
-}
-
-const scope = (self as any) as DedicatedWorkerGlobalScope;
-
-export function initProvider(impl) {
+export function initProvider(impl, scope = self as any) {
   scope.onmessage = function(msg) {
     const data = msg.data;
     if (data._init) {
