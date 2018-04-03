@@ -110,6 +110,13 @@ export interface BigJsonViewerOptions {
    * Path to the worker bundle, null by default
    */
   workerPath?: string;
+
+  /**
+   * Amount of the same value in arrays should be shown before they are being collapsed.
+   * Can be Infinity
+   * @default 5
+   */
+  collapseSameValue?: number;
 }
 
 export interface BigJsonViewer {}

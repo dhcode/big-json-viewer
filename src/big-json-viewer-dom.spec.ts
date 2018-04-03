@@ -134,8 +134,9 @@ describe('Big JSON Viewer', function() {
     data.fill(true);
 
     // default limit is 50
-
-    const viewer = await BigJsonViewerDom.fromData(JSON.stringify(data));
+    const viewer = await BigJsonViewerDom.fromData(JSON.stringify(data), {
+      collapseSameValue: Infinity
+    });
     const root: JsonNodeElement = viewer.getRootElement();
     expect(root).toBeTruthy();
 
@@ -181,6 +182,40 @@ describe('Big JSON Viewer', function() {
 
     stub = root.childrenElement.children[1] as JsonNodesStubElement;
     expect(stub.isNodeOpen()).toBeTruthy();
+
+    viewer.destroy();
+  });
+
+  it('should collapse same values in arrays', async function() {
+    const data = new Array(10);
+    data.fill(true);
+
+    const viewer = await BigJsonViewerDom.fromObject(data);
+    const root: JsonNodeElement = viewer.getRootElement();
+    expect(root).toBeTruthy();
+
+    await root.openNode();
+
+    expect(root.childrenElement.children.length).toBe(5 + 1 + 1);
+
+    viewer.destroy();
+  });
+
+  it('should collapse same values in mixed arrays', async function() {
+    const data = new Array(20);
+    data.fill(true, 0, 9);
+    data.fill(false, 9, 12);
+    data.fill(true, 12, 20);
+
+    const viewer = await BigJsonViewerDom.fromObject(data);
+    const root: JsonNodeElement = viewer.getRootElement();
+    expect(root).toBeTruthy();
+
+    await root.openNode();
+
+    expect(root.childrenElement.children.length).toBe(
+      5 + 1 + 1 + (12 - 9) + 5 + 1 + 1
+    );
 
     viewer.destroy();
   });

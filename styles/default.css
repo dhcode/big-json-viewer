@@ -1,6 +1,5 @@
 .json-node-type {
   color: #7f7f7f;
-  padding: 0 0.5em;
 }
 
 .json-node-toggler,
@@ -29,7 +28,6 @@
 }
 
 .json-node-label {
-  padding-left: 0.5em;
   color: #184183;
 }
 
@@ -65,7 +63,7 @@
   content: '▶';
   font-size: 0.6em;
   line-height: 1.6em;
-  right: 0;
+  right: 0.5em;
   transition: transform 100ms ease-out;
 }
 
@@ -79,8 +77,12 @@
   /*transform-origin: top;*/
 }
 
-.json-node-stub-toggler .json-node-label {
+.json-node-stub-toggler .json-node-label,
+.json-node-collapse {
   color: #7f7f7f;
+}
+.json-node-collapse {
+  font-size: 0.8em;
 }
 
 @keyframes json-node-children-open {

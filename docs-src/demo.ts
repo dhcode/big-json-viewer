@@ -12,7 +12,8 @@ const demoData = {
       name: 'Hero',
       age: 32,
       birthday: { year: 1986, month: 4, day: 30 }
-    }
+    },
+    element7: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
   },
   largeData: (function() {
     const list = new Array(Math.floor(Math.random() * 1000));

@@ -4,10 +4,7 @@ import {
   TreeSearchAreaOption,
   TreeSearchMatch
 } from './model/big-json-viewer.model';
-import {
-  BufferJsonNodeInfo,
-  BufferJsonParser
-} from './parser/buffer-json-parser';
+import { BufferJsonParser } from './parser/buffer-json-parser';
 import { JsonNodeInfo } from './parser/json-node-info';
 import { JsParser } from './parser/js-parser';
 

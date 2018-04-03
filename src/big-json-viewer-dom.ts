@@ -52,7 +52,8 @@ export class BigJsonViewerDom {
     labelAsPath: false,
     linkLabelCopyPath: 'Copy path',
     linkLabelExpandAll: 'Expand all',
-    workerPath: null
+    workerPath: null,
+    collapseSameValue: 5
   };
 
   private currentPattern: RegExp;
@@ -726,9 +727,7 @@ export class BigJsonViewerDom {
       }
     } else {
       const nodes = await this.getChildNodes(node.path, 0, limit);
-      nodes.forEach(node => {
-        element.appendChild(this.getNodeElement(node));
-      });
+      this.addChildNodes(nodes, element);
     }
     return element;
   }
@@ -829,13 +828,52 @@ export class BigJsonViewerDom {
     const children = document.createElement('div');
     children.classList.add('json-node-children');
     stubElement.childrenElement = children;
-    nodes.forEach(node => {
-      children.appendChild(this.getNodeElement(node));
-    });
+    this.addChildNodes(nodes, children);
     stubElement.appendChild(children);
     if (dispatchEvent) {
       this.dispatchNodeEvent('openStub', stubElement);
     }
+  }
+
+  protected addChildNodes(nodes: BigJsonViewerNode[], parent: HTMLElement) {
+    let lastValue: any;
+    let sameValueCount = 0;
+
+    nodes.forEach((node, i) => {
+      if (
+        node.type !== 'object' &&
+        node.type !== 'array' &&
+        lastValue === node.value
+      ) {
+        sameValueCount++;
+        if (sameValueCount >= this.options.collapseSameValue) {
+          return;
+        }
+      } else if (sameValueCount >= this.options.collapseSameValue) {
+        parent.appendChild(this.getCollapseIndicator(sameValueCount));
+        parent.appendChild(this.getNodeElement(nodes[i - 1]));
+        sameValueCount = 0;
+      } else {
+        sameValueCount = 0;
+      }
+      parent.appendChild(this.getNodeElement(node));
+      lastValue = node.value;
+    });
+    if (sameValueCount >= this.options.collapseSameValue) {
+      parent.appendChild(
+        this.getCollapseIndicator(
+          sameValueCount - this.options.collapseSameValue
+        )
+      );
+      parent.appendChild(this.getNodeElement(nodes[nodes.length - 1]));
+    }
+  }
+
+  protected getCollapseIndicator(count): HTMLDivElement {
+    const element = document.createElement('div');
+    element.classList.add('json-node-collapse');
+    element.appendChild(document.createTextNode('... [' + count + '] ...'));
+    return element;
   }
 
   protected getNodeHeader(node: BigJsonViewerNode) {
