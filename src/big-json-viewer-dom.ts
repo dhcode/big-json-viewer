@@ -665,7 +665,7 @@ export class BigJsonViewerDom {
         if (paginated === 'none') {
           return opened;
         }
-        child.openNode();
+        await child.openNode();
         if (child.childrenElement) {
           opened += await this.openAllChildren(
             child.childrenElement.children,

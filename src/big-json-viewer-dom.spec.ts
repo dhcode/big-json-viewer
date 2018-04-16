@@ -183,6 +183,11 @@ describe('Big JSON Viewer', function() {
     stub = root.childrenElement.children[1] as JsonNodesStubElement;
     expect(stub.isNodeOpen()).toBeTruthy();
 
+    await root.closeNode();
+    expect(root.getOpenPaths()).toEqual([]);
+    await root.openAll(2, 'first');
+    expect(root.getOpenPaths()).toEqual([['0']]);
+
     viewer.destroy();
   });
 

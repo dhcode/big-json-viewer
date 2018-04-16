@@ -18,7 +18,7 @@
     "test": "jest",
     "publish-patch": "npm version patch && npm publish",
     "publish-minor": "npm version minor && npm publish",
-    "precommit": "pretty-quick --staged"
+    "precommit": "npm run build-docs && pretty-quick --staged"
   },
   "keywords": ["JSON", "JavaScript", "TypeScript", "big", "JSON", "viewer"],
   "author": "Dominik Herbst",
@@ -35,7 +35,7 @@
     "husky": "^0.14.3",
     "jasmine-core": "^2.99.1",
     "jest": "^22.4.3",
-    "parcel-bundler": "^1.7.0",
+    "parcel-bundler": "^1.7.1",
     "prettier": "^1.11.1",
     "pretty-quick": "^1.4.1",
     "ts-jest": "^22.4.2",
