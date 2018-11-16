@@ -8,7 +8,7 @@
     "outDir": "dist",
     "baseUrl": ".",
     "declaration": true,
-    "lib": ["es5", "es6", "dom"],
+    "lib": ["es2015", "es5", "es6", "dom"],
     "paths": {
       "*": ["node_modules/*"]
     }

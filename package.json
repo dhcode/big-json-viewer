@@ -5,22 +5,26 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "clean-build":
-      "del-cli dist && node tools/build-inline-worker.js && tsc && parcel build src/browser-api.ts",
+    "clean-build": "del-cli dist && node tools/build-inline-worker.js && tsc && parcel build src/browser-api.ts",
     "build": "npm run clean-build && cpx styles/default.css dist",
     "prepack": "npm run build",
-    "build-docs":
-      "del-cli docs && parcel build docs-src/index.html --out-dir docs --public-url ./ && git add docs",
+    "build-docs": "del-cli docs && parcel build docs-src/index.html --out-dir docs --public-url ./ && git add docs",
     "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp --no-hmr",
-    "build-worker":
-      "parcel build src/worker/big-json-viewer.worker.ts --out-dir src/worker",
+    "build-worker": "parcel build src/worker/big-json-viewer.worker.ts --out-dir src/worker",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "jest",
     "publish-patch": "npm version patch && npm publish",
     "publish-minor": "npm version minor && npm publish",
     "precommit": "npm run build-docs && pretty-quick --staged"
   },
-  "keywords": ["JSON", "JavaScript", "TypeScript", "big", "JSON", "viewer"],
+  "keywords": [
+    "JSON",
+    "JavaScript",
+    "TypeScript",
+    "big",
+    "JSON",
+    "viewer"
+  ],
   "author": "Dominik Herbst",
   "license": "MIT",
   "repository": {
@@ -28,28 +32,36 @@
     "url": "https://github.com/dhcode/big-json-viewer.git"
   },
   "devDependencies": {
-    "@types/jest": "^22.2.2",
+    "@types/jest": "^22.2.3",
     "babel-polyfill": "^6.26.0",
     "cpx": "^1.5.0",
     "del-cli": "^1.1.0",
     "husky": "^0.14.3",
     "jasmine-core": "^2.99.1",
-    "jest": "^22.4.3",
-    "parcel-bundler": "^1.7.1",
-    "prettier": "^1.11.1",
-    "pretty-quick": "^1.4.1",
-    "ts-jest": "^22.4.2",
-    "tslint": "^5.9.1",
-    "typescript": "^2.7.2"
+    "jest": "^22.4.4",
+    "parcel-bundler": "^1.10.3",
+    "prettier": "^1.15.2",
+    "pretty-quick": "^1.8.0",
+    "ts-jest": "^22.4.6",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.6"
   },
   "jest": {
     "collectCoverage": true,
     "coverageDirectory": "./coverage",
+    "testURL": "http://localhost",
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },
     "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
   },
   "prettier": {
     "singleQuote": true

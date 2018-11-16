@@ -15,7 +15,8 @@ async function bundleWorker(file) {
   const options = {
     watch: false,
     minify: true,
-    cache: false
+    cache: false,
+    sourceMaps: false
   };
 
   const bundler = new Bundler(file, options);
