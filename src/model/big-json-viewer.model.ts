@@ -98,13 +98,13 @@ export interface BigJsonViewerOptions {
    * What label should be displayed on the Copy Path link.
    * Set null to disable this link
    */
-  linkLabelCopyPath?: string;
+  linkLabelCopyPath?: string | HTMLElement;
 
   /**
    * What label should be displayed on the Expand all link.
    * Set null to disable this link
    */
-  linkLabelExpandAll?: string;
+  linkLabelExpandAll?: string | HTMLElement;
 
   /**
    * Path to the worker bundle, null by default
@@ -117,6 +117,11 @@ export interface BigJsonViewerOptions {
    * @default 5
    */
   collapseSameValue?: number;
+
+  /**
+   * Register a hook function that is called for every opened node to add additional links to a node.
+   */
+  addLinksHook?: (node: BigJsonViewerNode) => HTMLElement[];
 }
 
 export interface BigJsonViewer {}

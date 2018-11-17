@@ -977,14 +977,19 @@ export class BigJsonViewerDom {
     parent.appendChild(valueElement);
   }
 
+  protected getLabelNode(label: string | HTMLElement): Node {
+    if (label instanceof Node) {
+      return label;
+    }
+    return document.createTextNode(label);
+  }
+
   protected generateLinks(parent: HTMLElement, node: BigJsonViewerNode) {
     if (this.isOpenableNode(node) && this.options.linkLabelExpandAll) {
       const link = parent.appendChild(document.createElement('a'));
       link.classList.add('json-node-link');
       link.href = 'javascript:';
-      link.appendChild(
-        document.createTextNode(this.options.linkLabelExpandAll)
-      );
+      link.appendChild(this.getLabelNode(this.options.linkLabelExpandAll));
       link.addEventListener('click', e => {
         e.preventDefault();
         const nodeElement = this.findNodeElement(parent);
@@ -998,7 +1003,7 @@ export class BigJsonViewerDom {
       const link = parent.appendChild(document.createElement('a'));
       link.classList.add('json-node-link');
       link.href = 'javascript:';
-      link.appendChild(document.createTextNode(this.options.linkLabelCopyPath));
+      link.appendChild(this.getLabelNode(this.options.linkLabelCopyPath));
       link.addEventListener('click', e => {
         e.preventDefault();
         const input = document.createElement('input');
@@ -1017,6 +1022,12 @@ export class BigJsonViewerDom {
         }
         parent.removeChild(input);
       });
+    }
+
+    if (typeof this.options.addLinksHook === 'function') {
+      for (const element of this.options.addLinksHook(node)) {
+        parent.appendChild(element);
+      }
     }
   }
 

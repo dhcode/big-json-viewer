@@ -10,7 +10,6 @@
     "prepack": "npm run build",
     "build-docs": "del-cli docs && parcel build docs-src/index.html --out-dir docs --public-url ./ && git add docs",
     "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp --no-hmr",
-    "build-worker": "parcel build src/worker/big-json-viewer.worker.ts --out-dir src/worker",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "jest",
     "publish-patch": "npm version patch && npm publish",
