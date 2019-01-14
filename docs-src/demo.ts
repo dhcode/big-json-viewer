@@ -103,6 +103,10 @@ async function loadStructureData(structure) {
 }
 
 async function showData(data: string) {
+  const index =
+    'showDataIndex' in viewerElement
+      ? ++viewerElement['showDataIndex']
+      : (viewerElement['showDataIndex'] = 0);
   if (viewerElement.children.length) {
     viewerElement.removeChild(viewerElement.children[0]);
   }
@@ -110,7 +114,12 @@ async function showData(data: string) {
     viewer.destroy();
   }
   try {
-    viewer = await BigJsonViewerDom.fromData(data);
+    const _viewer = await BigJsonViewerDom.fromData(data);
+    if (viewerElement['showDataIndex'] !== index) {
+      _viewer.destroy();
+      return;
+    }
+    viewer = _viewer;
     rootNode = viewer.getRootElement();
     rootNode.id = 'rootNode';
     viewerElement.appendChild(rootNode);

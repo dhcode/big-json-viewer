@@ -81,12 +81,22 @@ describe('Big JSON Viewer', function() {
       '{"hello": "hello world, is a great world","test": [0,"old world",{"worldgame": true}]}';
     const viewer = await BigJsonViewerDom.fromData(data);
     const root: JsonNodeElement = viewer.getRootElement();
+    let openCalls = 0;
+    let closeCalls = 0;
+    root.addEventListener('openNode', e => {
+      openCalls++;
+    });
+    root.addEventListener('closeNode', e => {
+      closeCalls++;
+    });
+
     expect(root).toBeTruthy();
 
     expect(root.isNodeOpen()).toBeFalsy();
     root.querySelector('a').dispatchEvent(new MouseEvent('click'));
     await wait(1);
     expect(root.isNodeOpen()).toBeTruthy();
+    expect(openCalls).toBe(1);
 
     expect(root.childrenElement).toBeTruthy();
     expect(root.childrenElement.children.length).toEqual(2);
@@ -94,6 +104,7 @@ describe('Big JSON Viewer', function() {
     root.querySelector('a').dispatchEvent(new MouseEvent('click'));
     await wait(1);
     expect(root.isNodeOpen()).toBeFalsy();
+    expect(closeCalls).toBe(1);
 
     expect(root.childrenElement).toBeNull();
 
@@ -202,6 +213,23 @@ describe('Big JSON Viewer', function() {
     await root.openNode();
 
     expect(root.childrenElement.children.length).toBe(5 + 1 + 1);
+
+    viewer.destroy();
+  });
+
+  it('should not collapse same values in objects', async function() {
+    const data = {};
+    for (let i = 0; i < 10; i++) {
+      data['node' + i] = true;
+    }
+
+    const viewer = await BigJsonViewerDom.fromObject(data);
+    const root: JsonNodeElement = viewer.getRootElement();
+    expect(root).toBeTruthy();
+
+    await root.openNode();
+
+    expect(root.childrenElement.children.length).toBe(10);
 
     viewer.destroy();
   });

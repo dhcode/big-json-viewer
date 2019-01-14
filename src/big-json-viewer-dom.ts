@@ -41,6 +41,12 @@ export interface JsonNodeElement extends JsonNodesStubElement {
    * withsStubs is true by default, it makes sure, that opened stubs are represented
    */
   getOpenPaths(withStubs?: boolean): string[][];
+
+  openNode(dispatchEvent?: boolean): Promise<boolean>;
+
+  closeNode(dispatchEvent?: boolean): Promise<boolean>;
+
+  toggleNode(dispatchEvent?: boolean): Promise<boolean>;
 }
 
 export class BigJsonViewerDom {
@@ -203,23 +209,23 @@ export class BigJsonViewerDom {
       }
       return false;
     };
-    nodeElement.openNode = async () => {
+    nodeElement.openNode = async (dispatchEvent = false) => {
       if (this.isOpenableNode(node)) {
-        return await this.openNode(nodeElement);
+        return await this.openNode(nodeElement, dispatchEvent);
       }
       return false;
     };
-    nodeElement.closeNode = async () => {
+    nodeElement.closeNode = async (dispatchEvent = false) => {
       if (this.isOpenableNode(node)) {
-        return this.closeNode(nodeElement);
+        return this.closeNode(nodeElement, dispatchEvent);
       }
       return false;
     };
-    nodeElement.toggleNode = async () => {
+    nodeElement.toggleNode = async (dispatchEvent = false) => {
       if (nodeElement.isNodeOpen()) {
-        return await nodeElement.closeNode();
+        return await nodeElement.closeNode(dispatchEvent);
       } else {
-        return await nodeElement.openNode();
+        return await nodeElement.openNode(dispatchEvent);
       }
     };
 
@@ -253,7 +259,7 @@ export class BigJsonViewerDom {
       e.preventDefault();
       const nodeElement = this.findNodeElement(anchor);
       if (nodeElement) {
-        nodeElement.toggleNode();
+        nodeElement.toggleNode(true);
       }
     });
   }
@@ -727,7 +733,11 @@ export class BigJsonViewerDom {
       }
     } else {
       const nodes = await this.getChildNodes(node.path, 0, limit);
-      this.addChildNodes(nodes, element);
+      this.addChildNodes(
+        nodes,
+        element,
+        node.type === 'array' ? this.options.collapseSameValue : Infinity
+      );
     }
     return element;
   }
@@ -765,6 +775,7 @@ export class BigJsonViewerDom {
       } else {
         this.openPaginationStub(
           stubElement,
+          node,
           await this.getChildNodes(node.path, start, limit),
           true
         );
@@ -779,6 +790,7 @@ export class BigJsonViewerDom {
       if (!stubElement.isNodeOpen()) {
         await this.openPaginationStub(
           stubElement,
+          node,
           await this.getChildNodes(node.path, start, limit)
         );
         return true;
@@ -821,6 +833,7 @@ export class BigJsonViewerDom {
 
   protected openPaginationStub(
     stubElement: JsonNodesStubElement,
+    node: BigJsonViewerNode,
     nodes: BigJsonViewerNode[],
     dispatchEvent = false
   ) {
@@ -828,14 +841,22 @@ export class BigJsonViewerDom {
     const children = document.createElement('div');
     children.classList.add('json-node-children');
     stubElement.childrenElement = children;
-    this.addChildNodes(nodes, children);
+    this.addChildNodes(
+      nodes,
+      children,
+      node.type === 'array' ? this.options.collapseSameValue : Infinity
+    );
     stubElement.appendChild(children);
     if (dispatchEvent) {
       this.dispatchNodeEvent('openStub', stubElement);
     }
   }
 
-  protected addChildNodes(nodes: BigJsonViewerNode[], parent: HTMLElement) {
+  protected addChildNodes(
+    nodes: BigJsonViewerNode[],
+    parent: HTMLElement,
+    collapseSameValue: number
+  ) {
     let lastValue: any;
     let sameValueCount = 0;
 
@@ -846,10 +867,10 @@ export class BigJsonViewerDom {
         lastValue === node.value
       ) {
         sameValueCount++;
-        if (sameValueCount >= this.options.collapseSameValue) {
+        if (sameValueCount >= collapseSameValue) {
           return;
         }
-      } else if (sameValueCount >= this.options.collapseSameValue) {
+      } else if (sameValueCount >= collapseSameValue) {
         parent.appendChild(this.getCollapseIndicator(sameValueCount));
         parent.appendChild(this.getNodeElement(nodes[i - 1]));
         sameValueCount = 0;
@@ -859,11 +880,9 @@ export class BigJsonViewerDom {
       parent.appendChild(this.getNodeElement(node));
       lastValue = node.value;
     });
-    if (sameValueCount >= this.options.collapseSameValue) {
+    if (sameValueCount >= collapseSameValue) {
       parent.appendChild(
-        this.getCollapseIndicator(
-          sameValueCount - this.options.collapseSameValue
-        )
+        this.getCollapseIndicator(sameValueCount - collapseSameValue)
       );
       parent.appendChild(this.getNodeElement(nodes[nodes.length - 1]));
     }
