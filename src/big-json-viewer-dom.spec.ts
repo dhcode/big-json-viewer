@@ -137,6 +137,10 @@ describe('Big JSON Viewer', function() {
     expect(cursor2.matches.length).toEqual(1);
     expect(root.getOpenPaths()).toEqual([['test']]);
 
+    const cursor3 = await viewer.openBySearch(/notExisting/);
+    expect(cursor3).toBeTruthy();
+    expect(cursor3.matches.length).toEqual(0);
+
     viewer.destroy();
   });
 

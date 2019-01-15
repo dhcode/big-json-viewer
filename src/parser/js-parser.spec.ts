@@ -7,6 +7,22 @@ describe('JS JSON Parser', function() {
     expect(info).toBeNull();
   });
 
+  it('should handle symbol with error', function() {
+    const symbol = Symbol('a');
+    const instance = new JsParser(symbol);
+    expect(() => {
+      const info = instance.getRootNodeInfo();
+    }).toThrow();
+  });
+
+  it('should handle function with error', function() {
+    const func = function() {};
+    const instance = new JsParser(func);
+    expect(() => {
+      const info = instance.getRootNodeInfo();
+    }).toThrow();
+  });
+
   it('should handle empty object', function() {
     const instance = new JsParser({});
     const info = instance.getRootNodeInfo();
@@ -213,6 +229,9 @@ describe('JS JSON Parser', function() {
     expect(nodes.length).toEqual(2);
     expectStringNode(nodes[0], 'd', ['3']);
     expectStringNode(nodes[1], 'e', ['4']);
+
+    const node = info.getByIndex(1);
+    expectStringNode(node, 'b', ['1']);
   });
 
   it('should handle object pagination', function() {

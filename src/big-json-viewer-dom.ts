@@ -359,10 +359,14 @@ export class BigJsonViewerDom {
       async navigateTo(index: number) {
         this.index = index;
         const match = this.matches[index];
-        const openedElement = await viewer.openSearchMatch(
-          nodeElement,
-          this.matches[index]
-        );
+        if (!match) {
+          console.warn(
+            'searchIndex does not exist on ' + this.matches.length,
+            index
+          );
+          return;
+        }
+        const openedElement = await viewer.openSearchMatch(nodeElement, match);
         if (openedElement) {
           if (openedElement.scrollIntoView) {
             openedElement.scrollIntoView({ block: 'center' });
@@ -397,7 +401,9 @@ export class BigJsonViewerDom {
 
     this.dispatchNodeEvent('openedNodes', nodeElement);
 
-    await cursor.navigateTo(0);
+    if (matches.length) {
+      await cursor.navigateTo(0);
+    }
 
     return cursor;
   }
