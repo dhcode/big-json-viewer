@@ -15,6 +15,20 @@ const demoData = {
     },
     element7: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
   },
+  jsData: {
+    element1: 'str',
+    element2: 1234,
+    element3: [23, 43, true, false, null, { name: 'special' }, {}],
+    element4: [],
+    element5: 'this should be some long text\nwith line break',
+    element6: {
+      name: 'Hero',
+      age: 32,
+      birthday: { year: 1986, month: 4, day: 30 }
+    },
+    element7: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    element8: { un: undefined, nu: null }
+  },
   largeData: (function() {
     const list = new Array(Math.floor(Math.random() * 1000));
     for (let i = 0; i < list.length; i++) {
@@ -51,7 +65,7 @@ querySelectorArray('[data-load]').forEach((link: any) => {
     link.loadListener = true;
     link.addEventListener('click', e => {
       e.preventDefault();
-      loadStructureData(demoData[load]);
+      loadStructureData(demoData[load], load === 'jsData');
     });
   }
 });
@@ -95,14 +109,21 @@ searchElement.addEventListener('input', async e => {
 
 loadStructureData(demoData.simpleData);
 
-async function loadStructureData(structure) {
-  const text = JSON.stringify(structure, null, 2);
-  codeElement.value = text;
-  await showData(text);
+async function loadStructureData(structure, jsData = false) {
+  if (jsData) {
+    codeElement.style.display = 'none';
+    await showData(structure, jsData);
+  } else {
+    const text = JSON.stringify(structure, null, 2);
+    codeElement.style.display = '';
+    codeElement.value = text;
+    await showData(text, jsData);
+  }
+
   showPaths();
 }
 
-async function showData(data: string) {
+async function showData(data: any, jsData = false) {
   const index =
     'showDataIndex' in viewerElement
       ? ++viewerElement['showDataIndex']
@@ -114,7 +135,12 @@ async function showData(data: string) {
     viewer.destroy();
   }
   try {
-    const _viewer = await BigJsonViewerDom.fromData(data);
+    let _viewer;
+    if (jsData) {
+      _viewer = await BigJsonViewerDom.fromObject(data);
+    } else {
+      _viewer = await BigJsonViewerDom.fromData(data);
+    }
     if (viewerElement['showDataIndex'] !== index) {
       _viewer.destroy();
       return;

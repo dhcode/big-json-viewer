@@ -12,13 +12,13 @@ export class JsJsonNodeInfo implements JsonNodeInfo {
     this.path = path;
     const jsType = typeof ref;
     if (jsType === 'undefined') {
-      throw new Error('Unknown type undefined');
+      this.type = 'undefined';
     }
     if (jsType === 'symbol') {
-      throw new Error('Unknown type symbol');
+      this.type = 'symbol';
     }
     if (jsType === 'function') {
-      throw new Error('Unknown type function');
+      this.type = 'function';
     }
     if (jsType === 'object' && ref === null) {
       this.type = 'null';

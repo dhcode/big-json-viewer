@@ -7,20 +7,20 @@ describe('JS JSON Parser', function() {
     expect(info).toBeNull();
   });
 
-  it('should handle symbol with error', function() {
+  it('should handle symbol', function() {
     const symbol = Symbol('a');
     const instance = new JsParser(symbol);
-    expect(() => {
-      const info = instance.getRootNodeInfo();
-    }).toThrow();
+    const info = instance.getRootNodeInfo();
+    expect(info.type).toEqual('symbol');
+    expect(info.getValue()).toEqual(symbol);
   });
 
-  it('should handle function with error', function() {
+  it('should handle function', function() {
     const func = function() {};
     const instance = new JsParser(func);
-    expect(() => {
-      const info = instance.getRootNodeInfo();
-    }).toThrow();
+    const info = instance.getRootNodeInfo();
+    expect(info.type).toEqual('function');
+    expect(info.getValue()).toEqual(func);
   });
 
   it('should handle empty object', function() {

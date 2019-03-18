@@ -4,7 +4,9 @@ export type NodeType =
   | 'array'
   | 'object'
   | 'boolean'
-  | 'null';
+  | 'null'
+  | 'undefined'
+  | string;
 
 export interface JsonNodeInfoBase {
   readonly type: NodeType;

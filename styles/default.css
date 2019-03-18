@@ -50,6 +50,7 @@
 .json-node-number .json-node-type,
 .json-node-string .json-node-type,
 .json-node-boolean .json-node-type,
+.json-node-undefined .json-node-type,
 .json-node-null .json-node-type {
   display: none;
 }
