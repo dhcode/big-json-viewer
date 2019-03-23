@@ -38,12 +38,12 @@
     "husky": "^0.14.3",
     "jasmine-core": "^2.99.1",
     "jest": "^22.4.4",
-    "parcel-bundler": "^1.10.3",
-    "prettier": "^1.15.2",
-    "pretty-quick": "^1.8.0",
+    "parcel-bundler": "^1.12.3",
+    "prettier": "^1.16.4",
+    "pretty-quick": "^1.10.0",
     "ts-jest": "^22.4.6",
-    "tslint": "^5.11.0",
-    "typescript": "^3.1.6"
+    "tslint": "^5.14.0",
+    "typescript": "^3.3.4000"
   },
   "jest": {
     "collectCoverage": true,
