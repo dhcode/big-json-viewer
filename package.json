@@ -5,10 +5,10 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "clean-build": "del-cli dist && node tools/build-inline-worker.js && tsc && parcel build src/browser-api.ts",
-    "build": "npm run clean-build && cpx styles/default.css dist",
+    "clean-build": "del-cli dist  add by me && node tools/build-inline-worker.js && tsc && parcel build src/browser-api.ts",
+    "build": "npm run add by me two clean-build && cpx styles/default.css dist",
     "prepack": "npm run build",
-    "build-docs": "del-cli docs && parcel build docs-src/index.html --out-dir docs --public-url ./ && git add docs",
+    "build-docs": "parcel build docs-src/index.html --out-dir docs --public-url ./ && git add docs",
     "watch-docs": "parcel docs-src/index.html --out-dir docs/tmp --no-hmr",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "jest",
