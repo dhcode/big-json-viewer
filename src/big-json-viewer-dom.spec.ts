@@ -1,17 +1,18 @@
 import { BigJsonViewerDom, JsonNodeElement } from './big-json-viewer-dom';
 import { JsonNodesStubElement } from './model/big-json-viewer.model';
 
-const wait = time => new Promise(resolve => setTimeout(() => resolve(), time));
+const wait = (time) =>
+  new Promise((resolve) => setTimeout(() => resolve(null), time));
 
-describe('Big JSON Viewer', function() {
-  it('should instantiate', async function() {
+describe('Big JSON Viewer', function () {
+  it('should instantiate', async function () {
     const viewer = await BigJsonViewerDom.fromData('{}');
     const root = viewer.getRootElement();
     expect(root).toBeTruthy();
     viewer.destroy();
   });
 
-  it('should create DOM from simple object', async function() {
+  it('should create DOM from simple object', async function () {
     const viewer = await BigJsonViewerDom.fromData('{"a":5, "b":true}');
     const root = viewer.getRootElement();
     expect(root).toBeTruthy();
@@ -23,7 +24,7 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should create DOM from JavaScript simple object', async function() {
+  it('should create DOM from JavaScript simple object', async function () {
     const viewer = await BigJsonViewerDom.fromObject({ a: 5, b: true });
     const root = viewer.getRootElement();
     expect(root).toBeTruthy();
@@ -35,7 +36,7 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should create DOM from more complex object', async function() {
+  it('should create DOM from more complex object', async function () {
     const data =
       '{"hello": "hello world, is a great world","test": [0,"old world",{"worldgame": true}]}';
     const viewer = await BigJsonViewerDom.fromData(data);
@@ -54,7 +55,7 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should open by toggle', async function() {
+  it('should open by toggle', async function () {
     const data =
       '{"hello": "hello world, is a great world","test": [0,"old world",{"worldgame": true}]}';
     const viewer = await BigJsonViewerDom.fromData(data);
@@ -76,17 +77,17 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should open by click', async function() {
+  it('should open by click', async function () {
     const data =
       '{"hello": "hello world, is a great world","test": [0,"old world",{"worldgame": true}]}';
     const viewer = await BigJsonViewerDom.fromData(data);
     const root: JsonNodeElement = viewer.getRootElement();
     let openCalls = 0;
     let closeCalls = 0;
-    root.addEventListener('openNode', e => {
+    root.addEventListener('openNode', (e) => {
       openCalls++;
     });
-    root.addEventListener('closeNode', e => {
+    root.addEventListener('closeNode', (e) => {
       closeCalls++;
     });
 
@@ -111,7 +112,7 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should open by search', async function() {
+  it('should open by search', async function () {
     const data =
       '{"hello": "hello world, is a great world","test": [0,"old world",{"worldgame": true}]}';
     const viewer = await BigJsonViewerDom.fromData(data);
@@ -144,13 +145,13 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should have working pagination', async function() {
+  it('should have working pagination', async function () {
     const data = new Array(120);
     data.fill(true);
 
     // default limit is 50
     const viewer = await BigJsonViewerDom.fromData(JSON.stringify(data), {
-      collapseSameValue: Infinity
+      collapseSameValue: Infinity,
     });
     const root: JsonNodeElement = viewer.getRootElement();
     expect(root).toBeTruthy();
@@ -206,7 +207,7 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should collapse same values in arrays', async function() {
+  it('should collapse same values in arrays', async function () {
     const data = new Array(10);
     data.fill(true);
 
@@ -221,7 +222,7 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should not collapse same values in objects', async function() {
+  it('should not collapse same values in objects', async function () {
     const data = {};
     for (let i = 0; i < 10; i++) {
       data['node' + i] = true;
@@ -238,7 +239,7 @@ describe('Big JSON Viewer', function() {
     viewer.destroy();
   });
 
-  it('should collapse same values in mixed arrays', async function() {
+  it('should collapse same values in mixed arrays', async function () {
     const data = new Array(20);
     data.fill(true, 0, 9);
     data.fill(false, 9, 12);
@@ -251,7 +252,7 @@ describe('Big JSON Viewer', function() {
     await root.openNode();
 
     expect(root.childrenElement.children.length).toBe(
-      5 + 1 + 1 + (12 - 9) + 5 + 1 + 1
+      5 + 1 + 1 + (12 - 9) + 5 + 1 + 1,
     );
 
     viewer.destroy();

@@ -33,78 +33,78 @@ class MockScope {
   }
 }
 
-describe('Worker Client', function() {
-  it('should init client with worker', async function() {
+describe('Worker Client', function () {
+  it('should init client with worker', async function () {
     const mockWorker = new MockWorker();
     const mockScope = new MockScope(mockWorker);
     initProvider({}, mockScope);
 
-    const client = new WorkerClient((mockWorker as any) as Worker);
+    const client = new WorkerClient(mockWorker as any as Worker);
     expect(client).toBeTruthy();
     await expect(client.initWorker()).resolves.toBeTruthy();
 
-    spyOn(mockWorker, 'terminate');
+    jest.spyOn(mockWorker, 'terminate');
 
     client.destroy();
 
     expect(mockWorker.terminate).toHaveBeenCalled();
   });
 
-  it('should fail to init', async function() {
+  it('should fail to init', async function () {
     const mockWorker = new MockWorker();
-    mockWorker.postMessage = msg => {
+    mockWorker.postMessage = (msg) => {
       mockWorker.onerror(new MockErrorEvent('failed'));
     };
-    const client = new WorkerClient((mockWorker as any) as Worker);
+    const client = new WorkerClient(mockWorker as any as Worker);
     expect(client).toBeTruthy();
     await expect(client.initWorker()).rejects.toEqual({ message: 'failed' });
   });
 
-  it('should request hello', async function() {
+  it('should request hello', async function () {
     const mockWorker = new MockWorker();
     const mockScope = new MockScope(mockWorker);
     initProvider(
       {
         hello(name: string) {
           return 'Hello ' + name;
-        }
+        },
       },
-      mockScope
+      mockScope,
     );
 
-    const client = new WorkerClient((mockWorker as any) as Worker);
+    const client = new WorkerClient(mockWorker as any as Worker);
     expect(client).toBeTruthy();
     await expect(client.initWorker()).resolves.toBeTruthy();
     await expect(client.call('hello', 'World')).resolves.toBe('Hello World');
   });
 
-  it('should fail', async function() {
+  it('should fail', async function () {
     const mockWorker = new MockWorker();
     const mockScope = new MockScope(mockWorker);
     initProvider(
       {
         fail() {
           throw new Error('failed');
-        }
+        },
       },
-      mockScope
+      mockScope,
     );
 
-    const client = new WorkerClient((mockWorker as any) as Worker);
+    const client = new WorkerClient(mockWorker as any as Worker);
     expect(client).toBeTruthy();
     await expect(client.initWorker()).resolves.toBeTruthy();
     await expect(client.call('fail')).rejects.toBe(
-      new Error('failed').toString()
+      new Error('failed').toString(),
     );
   });
 });
 
-describe('Worker Client Mock', function() {
-  it('should call hello', async function() {
+describe('Worker Client Mock', function () {
+  it('should call hello', async function () {
     const client = new WorkerClientMock({
       hello(name) {
         return 'Hello ' + name;
-      }
+      },
     });
 
     expect(client).toBeTruthy();

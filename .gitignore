@@ -6,3 +6,4 @@ node_modules
 /.cache
 /demo-dist
 /docs/tmp
+/.parcel-cache

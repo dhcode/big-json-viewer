@@ -1,7 +1,6 @@
 # Big JSON Viewer
 
 [![npm](https://img.shields.io/npm/v/big-json-viewer.svg)](https://www.npmjs.com/package/big-json-viewer)
-[![Travis](https://img.shields.io/travis/dhcode/big-json-viewer.svg)](https://travis-ci.org/dhcode/big-json-viewer)
 [![Codecov](https://img.shields.io/codecov/c/github/dhcode/big-json-viewer.svg)](https://codecov.io/gh/dhcode/big-json-viewer)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://www.npmjs.com/package/big-json-viewer)
 
@@ -26,7 +25,7 @@ test.ts
 ```typescript
 import { BigJsonViewerDom } from 'big-json-viewer';
 
-BigJsonViewerDom.fromData(JSON.stringify({ test: 23 })).then(viewer => {
+BigJsonViewerDom.fromData(JSON.stringify({ test: 23 })).then((viewer) => {
     const node = viewer.getRootElement();
     document.body.appendChild(node);
     node.openAll(1);
@@ -38,14 +37,14 @@ index.html
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Test</title>
-  <link rel="stylesheet" href="./node_modules/big-json-viewer/styles/default.css">
-</head>
-<body>
-  <script src="src/test.ts"></script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Test</title>
+        <link rel="stylesheet" href="./node_modules/big-json-viewer/styles/default.css" />
+    </head>
+    <body>
+        <script src="src/test.ts"></script>
+    </body>
 </html>
 ```
 
@@ -110,11 +109,11 @@ Call this to free resources. It will terminate any by the instance started worke
 
 Searches the tree by the specified `pattern` and `searchArea`. Returns a `TreeSearchCursor`, which contains all matches and methods to jump the focus between the matches.
 
-*   `openLimit` is `1` by default. But can be `Infinity` or any number.
-*   `searchArea` describes where the pattern should be searched. Has the following options:
-    *   `'all'` search in keys and values (default)
-    *   `'keys'` search only in keys
-    *   `'values'` search only in values
+- `openLimit` is `1` by default. But can be `Infinity` or any number.
+- `searchArea` describes where the pattern should be searched. Has the following options:
+    - `'all'` search in keys and values (default)
+    - `'keys'` search only in keys
+    - `'values'` search only in values
 
 ## `JsonNodeElement` methods
 
@@ -138,11 +137,11 @@ Opens the specified path and returns the opened node, in case it was found.
 
 Opens all nodes until the defined depth. Returns the number of opened nodes.
 
-*   `maxDepth` is `Infinity` by default
-*   `paginated` is a string of the following options
-    *   `'first'` open only the first pagination stub (default)
-    *   `'all'` open all pagination stubs
-    *   `'none'` open no pagination stubs
+- `maxDepth` is `Infinity` by default
+- `paginated` is a string of the following options
+    - `'first'` open only the first pagination stub (default)
+    - `'all'` open all pagination stubs
+    - `'none'` open no pagination stubs
 
 #### `getOpenPaths(withStubs?: boolean): string[][]`
 
@@ -162,7 +161,7 @@ Fires when a node is being opened by the user directly with a click. The target 
 Example logs the opened path:
 
 ```javascript
-rootNode.addEventListener('openNode', function(e) {
+rootNode.addEventListener('openNode', function (e) {
     console.log('openNode', e.target.jsonNode.path);
 });
 ```
@@ -197,8 +196,8 @@ If something has changed that affects the Docs/Demo page, run:
 
 ### Future TODOs
 
-*   Improve display of large strings.
-*   Support JSON Schema. If provided show meta information from the schema definition.
+- Improve display of large strings.
+- Support JSON Schema. If provided show meta information from the schema definition.
 
 ## License
 

@@ -1,4 +1,3 @@
-import 'babel-polyfill';
 import { BigJsonViewerDom, JsonNodeElement } from '../src';
 
 const demoData = {
@@ -11,9 +10,9 @@ const demoData = {
     element6: {
       name: 'Hero',
       age: 32,
-      birthday: { year: 1986, month: 4, day: 30 }
+      birthday: { year: 1986, month: 4, day: 30 },
     },
-    element7: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    element7: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   },
   jsData: {
     element1: 'str',
@@ -24,12 +23,12 @@ const demoData = {
     element6: {
       name: 'Hero',
       age: 32,
-      birthday: { year: 1986, month: 4, day: 30 }
+      birthday: { year: 1986, month: 4, day: 30 },
     },
     element7: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    element8: { un: undefined, nu: null }
+    element8: { un: undefined, nu: null },
   },
-  largeData: (function() {
+  largeData: (function () {
     const list = new Array(Math.floor(Math.random() * 1000));
     for (let i = 0; i < list.length; i++) {
       list[i] = Math.random();
@@ -45,7 +44,7 @@ const demoData = {
       }
     }
     return list;
-  })()
+  })(),
 };
 
 const codeElement = document.getElementById('code') as HTMLTextAreaElement;
@@ -54,7 +53,7 @@ const pathsElement = document.getElementById('paths') as HTMLTextAreaElement;
 const copiedElement = document.getElementById('copied') as HTMLInputElement;
 const searchElement = document.getElementById('search') as HTMLInputElement;
 const searchInfoElement = document.getElementById(
-  'searchInfo'
+  'searchInfo',
 ) as HTMLSpanElement;
 let viewer = null;
 let rootNode = document.getElementById('rootNode') as JsonNodeElement;
@@ -63,21 +62,21 @@ querySelectorArray('[data-load]').forEach((link: any) => {
   const load = link.getAttribute('data-load');
   if (demoData[load] && !link.loadListener) {
     link.loadListener = true;
-    link.addEventListener('click', e => {
+    link.addEventListener('click', (e) => {
       e.preventDefault();
       loadStructureData(demoData[load], load === 'jsData');
     });
   }
 });
 
-codeElement.addEventListener('input', e => {
+codeElement.addEventListener('input', (e) => {
   console.log('show data based on input');
   showData(codeElement.value);
 });
-searchElement.addEventListener('input', async e => {
+searchElement.addEventListener('input', async (e) => {
   if (searchElement.value.length >= 2) {
     const cursor = await viewer.openBySearch(
-      new RegExp(searchElement.value, 'i')
+      new RegExp(searchElement.value, 'i'),
     );
     searchInfoElement.textContent = cursor.matches.length + ' matches';
 
@@ -85,7 +84,7 @@ searchElement.addEventListener('input', async e => {
 
     const prevBtn = searchInfoElement.appendChild(document.createElement('a'));
     prevBtn.href = 'javascript:';
-    prevBtn.addEventListener('click', e => {
+    prevBtn.addEventListener('click', (e) => {
       e.preventDefault();
       cursor.previous();
     });
@@ -95,7 +94,7 @@ searchElement.addEventListener('input', async e => {
 
     const nextBtn = searchInfoElement.appendChild(document.createElement('a'));
     nextBtn.href = 'javascript:';
-    nextBtn.addEventListener('click', e => {
+    nextBtn.addEventListener('click', (e) => {
       e.preventDefault();
       cursor.next();
     });
@@ -126,7 +125,7 @@ async function loadStructureData(structure, jsData = false) {
 async function showData(data: any, jsData = false) {
   const index =
     'showDataIndex' in viewerElement
-      ? ++viewerElement['showDataIndex']
+      ? ++(viewerElement['showDataIndex'] as number)
       : (viewerElement['showDataIndex'] = 0);
   if (viewerElement.children.length) {
     viewerElement.removeChild(viewerElement.children[0]);
@@ -161,7 +160,7 @@ async function showData(data: any, jsData = false) {
 }
 
 function setupRootNode() {
-  const listener = e => {
+  const listener = (e) => {
     console.log('event', e.type);
     showPaths();
   };
@@ -170,7 +169,7 @@ function setupRootNode() {
   rootNode.addEventListener('openedNodes', listener);
   rootNode.addEventListener('openStub', listener);
   rootNode.addEventListener('closeStub', listener);
-  rootNode.addEventListener('copyPath', e => {
+  rootNode.addEventListener('copyPath', (e) => {
     const node = e.target as JsonNodeElement;
     copiedElement.value = node.jsonNode.path.join('.');
   });
@@ -183,7 +182,7 @@ function showPaths() {
 
   pathsElement.value = rootNode
     .getOpenPaths()
-    .map(path => path.join('.'))
+    .map((path) => path.join('.'))
     .join('\n');
 }
 
