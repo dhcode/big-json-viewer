@@ -31,11 +31,18 @@
   color: #184183;
 }
 
+.json-node-number .json-node-value,
+.json-node-Int64 .json-node-value,
+.json-node-In32 .json-node-value,
+.json-node-Decimal128 .json-node-value,
 .json-node-number .json-node-value {
   color: blue;
 }
 
-.json-node-string .json-node-value {
+.json-node-string .json-node-value,
+.json-node-Date .json-node-value,
+.json-node-ObjectId .json-node-value,
+.json-node-RegExp .json-node-value {
   color: green;
 }
 
@@ -53,6 +60,10 @@
 .json-node-undefined .json-node-type,
 .json-node-null .json-node-type {
   display: none;
+}
+
+.json-node-value + .json-node-type {
+  margin-left: 0.5rem;
 }
 
 .json-node-accessor {

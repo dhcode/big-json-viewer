@@ -28,6 +28,28 @@ const demoData = {
     element7: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     element8: { un: undefined, nu: null },
   },
+  extendedJson: {
+    binaryData: {
+      $binary: {
+        base64: 'VGhpcyBpcyBhIGJpbmFyeSBzYW1wbGU',
+        subType: '00',
+      },
+    },
+    dateCanonical: { $date: { $numberLong: '1704067200000' } },
+    dateRelaxed: { $date: '2024-01-01T12:00:00Z' },
+    numbers: {
+      int32: { $numberInt: '42' },
+      int32Relaxed: 42,
+      int64: { $numberLong: '1234567890123' },
+      int64Relaxed: 1234567890123,
+      decimal128: { $numberDecimal: '12345.6789' },
+    },
+    regex: { $regularExpression: { pattern: '^abc', options: 'i' } },
+    timestamp: { $timestamp: { t: 1627846267, i: 1 } },
+    minKey: { $minKey: 1 },
+    maxKey: { $maxKey: 1 },
+    objectId: { $oid: '507f1f77bcf86cd799439011' },
+  },
   largeData: (function () {
     const list = new Array(Math.floor(Math.random() * 1000));
     for (let i = 0; i < list.length; i++) {
@@ -53,7 +75,7 @@ const pathsElement = document.getElementById('paths') as HTMLTextAreaElement;
 const copiedElement = document.getElementById('copied') as HTMLInputElement;
 const searchElement = document.getElementById('search') as HTMLInputElement;
 const searchInfoElement = document.getElementById(
-  'searchInfo',
+  'searchInfo'
 ) as HTMLSpanElement;
 let viewer = null;
 let rootNode = document.getElementById('rootNode') as JsonNodeElement;
@@ -76,7 +98,7 @@ codeElement.addEventListener('input', (e) => {
 searchElement.addEventListener('input', async (e) => {
   if (searchElement.value.length >= 2) {
     const cursor = await viewer.openBySearch(
-      new RegExp(searchElement.value, 'i'),
+      new RegExp(searchElement.value, 'i')
     );
     searchInfoElement.textContent = cursor.matches.length + ' matches';
 
@@ -138,7 +160,9 @@ async function showData(data: any, jsData = false) {
     if (jsData) {
       _viewer = await BigJsonViewerDom.fromObject(data);
     } else {
-      _viewer = await BigJsonViewerDom.fromData(data);
+      _viewer = await BigJsonViewerDom.fromData(data, {
+        showExtendedJson: true,
+      });
     }
     if (viewerElement['showDataIndex'] !== index) {
       _viewer.destroy();

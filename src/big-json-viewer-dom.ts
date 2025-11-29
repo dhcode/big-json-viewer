@@ -6,12 +6,12 @@ import {
   PaginatedOption,
   TreeSearchAreaOption,
   TreeSearchCursor,
-  TreeSearchMatch
+  TreeSearchMatch,
 } from './model/big-json-viewer.model';
 import {
   WorkerClient,
   WorkerClientApi,
-  WorkerClientMock
+  WorkerClientMock,
 } from './helpers/worker-client';
 import { forEachMatchFromString } from './parser/json-node-search';
 import { initWorker } from './worker/big-json-viewer.worker.inline';
@@ -59,7 +59,8 @@ export class BigJsonViewerDom {
     linkLabelCopyPath: 'Copy path',
     linkLabelExpandAll: 'Expand all',
     workerPath: null,
-    collapseSameValue: 5
+    collapseSameValue: 5,
+    showExtendedJson: false,
   };
 
   private currentPattern: RegExp;
@@ -141,10 +142,103 @@ export class BigJsonViewerDom {
   protected async getChildNodes(
     path: string[],
     start: number,
-    limit: number
+    limit: number,
+    withExtendedJson = true
   ): Promise<BigJsonViewerNode[]> {
     const client = await this.getWorkerClient();
-    return client.call('getNodes', path, start, limit);
+    const nodes = await client.call('getNodes', path, start, limit);
+    if (withExtendedJson && this.options.showExtendedJson) {
+      return Promise.all(nodes.map((n) => this.transformExtendedJsonNode(n)));
+    }
+    return nodes;
+  }
+
+  protected async transformExtendedJsonNode(
+    node: BigJsonViewerNode
+  ): Promise<BigJsonViewerNode> {
+    if (node.type !== 'object' || node.length !== 1) {
+      return node;
+    }
+    const childNode = (
+      await this.getChildNodes(node.path, 0, node.length, false)
+    )[0];
+    const createOfTypeNode = (
+      type: string,
+      value: string | number | boolean
+    ): BigJsonViewerNode => {
+      return {
+        type: type,
+        path: node.path,
+        value,
+        openable: false,
+      };
+    };
+    const stringTransformers = {
+      $oid: (node: BigJsonViewerNode) =>
+        createOfTypeNode('ObjectId', node.value),
+      $date: (node: BigJsonViewerNode) => createOfTypeNode('Date', node.value),
+      $numberDecimal: (node: BigJsonViewerNode) =>
+        createOfTypeNode('Decimal128', parseFloat(node.value)),
+      $numberDouble: (node: BigJsonViewerNode) =>
+        createOfTypeNode('Double', parseFloat(node.value)),
+      $numberLong: (node: BigJsonViewerNode) =>
+        createOfTypeNode('Int64', parseFloat(node.value)),
+      $numberInt: (node: BigJsonViewerNode) =>
+        createOfTypeNode('Int32', parseFloat(node.value)),
+      $maxKey: (node: BigJsonViewerNode) =>
+        createOfTypeNode('MaxKey', parseFloat(node.value)),
+      $minKey: (node: BigJsonViewerNode) =>
+        createOfTypeNode('MinKey', parseFloat(node.value)),
+      $uuid: (node: BigJsonViewerNode) => createOfTypeNode('UUID', node.value),
+    };
+
+    const subObjectTransformers = {
+      $binary: (data) => createOfTypeNode('Binary', data),
+      $date: (data) =>
+        createOfTypeNode(
+          'Date',
+          new Date(parseFloat(data.$numberLong)).toISOString()
+        ),
+      $regularExpression: (data) =>
+        createOfTypeNode('RegExp', `/${data.pattern}/${data.options}`),
+      $timestamp: (data) => createOfTypeNode('Timestamp', data),
+    };
+
+    const name = childNode.path[childNode.path.length - 1];
+    if (subObjectTransformers[name] && childNode.type === 'object') {
+      const data = await this.nodeToValue(childNode);
+      return subObjectTransformers[name](data);
+    } else if (
+      stringTransformers[name] &&
+      (childNode.type === 'string' || childNode.type === 'number')
+    ) {
+      return stringTransformers[name](childNode);
+    }
+
+    return node;
+  }
+
+  protected async nodeToValue(node: BigJsonViewerNode): Promise<any> {
+    if (node.type === 'object') {
+      const obj = {};
+      const childNodes = await this.getChildNodes(node.path, 0, node.length);
+      for (let i = 0; i < childNodes.length; i++) {
+        const childNode = childNodes[i];
+        const key = childNode.path[childNode.path.length - 1];
+        obj[key] = await this.nodeToValue(childNode);
+      }
+      return obj;
+    } else if (node.type === 'array') {
+      const arr = [];
+      const childNodes = await this.getChildNodes(node.path, 0, node.length);
+      for (let i = 0; i < childNodes.length; i++) {
+        const childNode = childNodes[i];
+        arr.push(await this.nodeToValue(childNode));
+      }
+      return arr;
+    } else {
+      return node.value;
+    }
   }
 
   protected async getSearchMatches(
@@ -255,7 +349,7 @@ export class BigJsonViewerDom {
   }
 
   protected attachClickToggleListener(anchor: HTMLAnchorElement) {
-    anchor.addEventListener('click', e => {
+    anchor.addEventListener('click', (e) => {
       e.preventDefault();
       const nodeElement = this.findNodeElement(anchor);
       if (nodeElement) {
@@ -297,7 +391,7 @@ export class BigJsonViewerDom {
 
     if (nodeElement.childrenElement) {
       this.getVisibleChildren(nodeElement.childrenElement.children).forEach(
-        element => this.refreshHeaders(element)
+        (element) => this.refreshHeaders(element)
       );
     }
   }
@@ -391,7 +485,7 @@ export class BigJsonViewerDom {
         return this.navigateTo(
           this.index - 1 < 0 ? this.matches.length : this.index - 1
         );
-      }
+      },
     };
 
     const length = Math.min(matches.length, openLimit);
@@ -541,7 +635,7 @@ export class BigJsonViewerDom {
     } else {
       event = new Event(type, {
         bubbles: true,
-        cancelable: false
+        cancelable: false,
       });
     }
     nodeElement.dispatchEvent(event);
@@ -774,7 +868,7 @@ export class BigJsonViewerDom {
 
     stubElement.appendChild(anchor);
 
-    anchor.addEventListener('click', async e => {
+    anchor.addEventListener('click', async (e) => {
       e.preventDefault();
       if (stubElement.isNodeOpen()) {
         this.closePaginationStub(stubElement, true);
@@ -994,10 +1088,14 @@ export class BigJsonViewerDom {
     node: BigJsonViewerNode,
     highlightPattern: RegExp
   ) {
+    const valueText = ['Date', 'ObjectId', 'RegExp'].includes(node.type)
+      ? node.value
+      : JSON.stringify(node.value);
+
     const valueElement = document.createElement('span');
     valueElement.classList.add('json-node-value');
     valueElement.appendChild(
-      this.getHighlightedText(JSON.stringify(node.value), highlightPattern)
+      this.getHighlightedText(valueText, highlightPattern)
     );
     parent.appendChild(valueElement);
   }
@@ -1015,7 +1113,7 @@ export class BigJsonViewerDom {
       link.classList.add('json-node-link');
       link.href = 'javascript:';
       link.appendChild(this.getLabelNode(this.options.linkLabelExpandAll));
-      link.addEventListener('click', e => {
+      link.addEventListener('click', (e) => {
         e.preventDefault();
         const nodeElement = this.findNodeElement(parent);
         if (nodeElement && this.isOpenableNode(nodeElement.jsonNode)) {
@@ -1029,7 +1127,7 @@ export class BigJsonViewerDom {
       link.classList.add('json-node-link');
       link.href = 'javascript:';
       link.appendChild(this.getLabelNode(this.options.linkLabelCopyPath));
-      link.addEventListener('click', e => {
+      link.addEventListener('click', (e) => {
         e.preventDefault();
         const input = document.createElement('input');
         input.type = 'text';

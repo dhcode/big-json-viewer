@@ -119,6 +119,12 @@ export interface BigJsonViewerOptions {
   collapseSameValue?: number;
 
   /**
+   * Whether to support MongoDB Extended JSON format
+   * @default false
+   */
+  showExtendedJson?: boolean;
+
+  /**
    * Register a hook function that is called for every opened node to add additional links to a node.
    */
   addLinksHook?: (node: BigJsonViewerNode) => HTMLElement[];
