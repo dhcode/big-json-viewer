@@ -61,6 +61,7 @@ export class BigJsonViewerDom {
     workerPath: null,
     collapseSameValue: 5,
     showExtendedJson: false,
+    maxStringPreviewLength: 250,
   };
 
   private currentPattern: RegExp;
@@ -164,12 +165,14 @@ export class BigJsonViewerDom {
     )[0];
     const createOfTypeNode = (
       type: string,
-      value: string | number | boolean
+      value: string | number | boolean,
+      length?: number
     ): BigJsonViewerNode => {
       return {
         type: type,
         path: node.path,
         value,
+        length,
         openable: false,
       };
     };
@@ -193,7 +196,8 @@ export class BigJsonViewerDom {
     };
 
     const subObjectTransformers = {
-      $binary: (data) => createOfTypeNode('Binary', data),
+      $binary: (data) =>
+        createOfTypeNode('Binary', data, this.base64ByteLength(data.base64)),
       $date: (data) =>
         createOfTypeNode(
           'Date',
@@ -204,18 +208,28 @@ export class BigJsonViewerDom {
       $timestamp: (data) => createOfTypeNode('Timestamp', data),
     };
 
-    const name = childNode.path[childNode.path.length - 1];
-    if (subObjectTransformers[name] && childNode.type === 'object') {
-      const data = await this.nodeToValue(childNode);
-      return subObjectTransformers[name](data);
-    } else if (
-      stringTransformers[name] &&
-      (childNode.type === 'string' || childNode.type === 'number')
-    ) {
-      return stringTransformers[name](childNode);
+    try {
+      const name = childNode.path[childNode.path.length - 1];
+      if (subObjectTransformers[name] && childNode.type === 'object') {
+        const data = await this.nodeToValue(childNode);
+        return subObjectTransformers[name](data);
+      } else if (
+        stringTransformers[name] &&
+        (childNode.type === 'string' || childNode.type === 'number')
+      ) {
+        return stringTransformers[name](childNode);
+      }
+    } catch (e) {
+      console.warn('Could not transform extended JSON node ' + node.path, e);
     }
 
     return node;
+  }
+
+  private base64ByteLength(base64: string): number {
+    // Count padding characters
+    const padding = (base64.match(/=+$/) || [''])[0].length;
+    return Math.floor((base64.length * 3) / 4) - padding;
   }
 
   protected async nodeToValue(node: BigJsonViewerNode): Promise<any> {
@@ -396,14 +410,59 @@ export class BigJsonViewerDom {
     }
   }
 
+  protected generateTruncatedText(text: string): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+    if (text.length < this.options.maxStringPreviewLength) {
+      fragment.appendChild(document.createTextNode(text));
+      return fragment;
+    }
+    const truncTextNode = document.createElement('span');
+    const renderTruncated = () => {
+      truncTextNode.classList.add('json-node-value-truncated');
+      truncTextNode.classList.remove('json-node-value-expanded');
+      truncTextNode.innerHTML = '';
+      truncTextNode.appendChild(
+        document.createTextNode(
+          text.slice(0, this.options.maxStringPreviewLength)
+        )
+      );
+    };
+    const renderExpanded = () => {
+      truncTextNode.classList.remove('json-node-value-truncated');
+      truncTextNode.classList.add('json-node-value-expanded');
+      truncTextNode.innerHTML = '';
+      truncTextNode.appendChild(document.createTextNode(text));
+    };
+
+    renderTruncated();
+
+    fragment.appendChild(truncTextNode);
+
+    const link = document.createElement('a');
+    link.classList.add('json-node-value-expand-link');
+    link.href = 'javascript:';
+    link.innerText = '...';
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (truncTextNode.classList.contains('json-node-value-truncated')) {
+        renderExpanded();
+        link.innerText = '<<';
+      } else {
+        renderTruncated();
+        link.innerText = '...';
+      }
+    });
+    fragment.appendChild(link);
+    return fragment;
+  }
+
   protected getHighlightedText(
     text: string,
     pattern: RegExp
   ): DocumentFragment {
     const fragment = document.createDocumentFragment();
     if (!pattern) {
-      fragment.appendChild(document.createTextNode(text));
-      return fragment;
+      return this.generateTruncatedText(text);
     }
     let lastIndex = 0;
     forEachMatchFromString(pattern, text, (index, length) => {
@@ -1048,6 +1107,10 @@ export class BigJsonViewerDom {
       typeInfo.appendChild(
         document.createTextNode('Array[' + node.length + ']')
       );
+    } else if (node.type === 'Binary') {
+      typeInfo.appendChild(
+        document.createTextNode('Binary(' + node.length + ')')
+      );
     } else {
       typeInfo.appendChild(document.createTextNode(node.type));
     }
@@ -1088,9 +1151,7 @@ export class BigJsonViewerDom {
     node: BigJsonViewerNode,
     highlightPattern: RegExp
   ) {
-    const valueText = ['Date', 'ObjectId', 'RegExp'].includes(node.type)
-      ? node.value
-      : JSON.stringify(node.value);
+    const valueText = this.getValueToRender(node);
 
     const valueElement = document.createElement('span');
     valueElement.classList.add('json-node-value');
@@ -1098,6 +1159,16 @@ export class BigJsonViewerDom {
       this.getHighlightedText(valueText, highlightPattern)
     );
     parent.appendChild(valueElement);
+  }
+
+  protected getValueToRender(node: BigJsonViewerNode): string {
+    if (['Date', 'ObjectId', 'RegExp'].includes(node.type)) {
+      return node.value;
+    }
+    if (node.type === 'Binary' && node.value.base64) {
+      return JSON.stringify(node.value.base64);
+    }
+    return JSON.stringify(node.value);
   }
 
   protected getLabelNode(label: string | HTMLElement): Node {
@@ -1109,7 +1180,7 @@ export class BigJsonViewerDom {
 
   protected generateLinks(parent: HTMLElement, node: BigJsonViewerNode) {
     if (this.isOpenableNode(node) && this.options.linkLabelExpandAll) {
-      const link = parent.appendChild(document.createElement('a'));
+      const link = document.createElement('a');
       link.classList.add('json-node-link');
       link.href = 'javascript:';
       link.appendChild(this.getLabelNode(this.options.linkLabelExpandAll));
@@ -1120,10 +1191,11 @@ export class BigJsonViewerDom {
           this.openAll(nodeElement, Infinity, 'first', true);
         }
       });
+      parent.appendChild(link);
     }
 
     if (node.path.length && this.options.linkLabelCopyPath) {
-      const link = parent.appendChild(document.createElement('a'));
+      const link = document.createElement('a');
       link.classList.add('json-node-link');
       link.href = 'javascript:';
       link.appendChild(this.getLabelNode(this.options.linkLabelCopyPath));
@@ -1145,6 +1217,7 @@ export class BigJsonViewerDom {
         }
         parent.removeChild(input);
       });
+      parent.appendChild(link);
     }
 
     if (typeof this.options.addLinksHook === 'function') {

@@ -125,6 +125,12 @@ export interface BigJsonViewerOptions {
   showExtendedJson?: boolean;
 
   /**
+   * Maximum length of string preview in the tree view
+   * @default 250
+   */
+  maxStringPreviewLength?: number;
+
+  /**
    * Register a hook function that is called for every opened node to add additional links to a node.
    */
   addLinksHook?: (node: BigJsonViewerNode) => HTMLElement[];

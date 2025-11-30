@@ -31,6 +31,10 @@
   color: #184183;
 }
 
+.json-node-value {
+  overflow-wrap: anywhere;
+}
+
 .json-node-number .json-node-value,
 .json-node-Int64 .json-node-value,
 .json-node-In32 .json-node-value,
@@ -104,6 +108,13 @@
   to {
     transform: scaleY(1);
   }
+}
+
+.json-node-value-expand-link {
+  color: #7f7f7f;
+}
+.json-node-value-expand-link:hover {
+  color: black;
 }
 
 .json-node-link {

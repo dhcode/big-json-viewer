@@ -6,7 +6,10 @@ const demoData = {
     element2: 1234,
     element3: [23, 43, true, false, null, { name: 'special' }, {}],
     element4: [],
-    element5: 'this should be some long text\nwith line break',
+    element5:
+      'this should be some long text\nwith line break.\nIt shows how long text is handled in the Big JSON Viewer. ' +
+      'Not everything is rendered at once, only parts of it to keep the performance high. The limit is set by default to 250 characters.' +
+      'This part of the text is only to make sure that we go over that limit and see how it works in practice. ',
     element6: {
       name: 'Hero',
       age: 32,
@@ -31,7 +34,13 @@ const demoData = {
   extendedJson: {
     binaryData: {
       $binary: {
-        base64: 'VGhpcyBpcyBhIGJpbmFyeSBzYW1wbGU',
+        base64:
+          'dGhpcyBzaG91bGQgYmUgc29tZSBsb25nIHRleHRcbndpdGggbGluZSBicmVhay5cbkl0IHNob3d' +
+          'zIGhvdyBsb25nIHRleHQgaXMgaGFuZGxlZCBpbiB0aGUgQmlnIEpTT04gVmlld2VyLiBOb3QgZX' +
+          'Zlcnl0aGluZyBpcyByZW5kZXJlZCBhdCBvbmNlLCBvbmx5IHBhcnRzIG9mIGl0IHRvIGtlZXAgd' +
+          'GhlIHBlcmZvcm1hbmNlIGhpZ2guIFRoZSBsaW1pdCBpcyBzZXQgYnkgZGVmYXVsdCB0byAyNTAg' +
+          'Y2hhcmFjdGVycy5UaGlzIHBhcnQgb2YgdGhlIHRleHQgaXMgb25seSB0byBtYWtlIHN1cmUgdGh' +
+          'hdCB3ZSBnbyBvdmVyIHRoYXQgbGltaXQgYW5kIHNlZSBob3cgaXQgd29ya3MgaW4gcHJhY3RpY2Uu',
         subType: '00',
       },
     },
