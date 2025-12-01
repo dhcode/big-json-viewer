@@ -1,6 +1,7 @@
 /src
 /demo
 node_modules
+/.parcel-cache
 /.idea
 /.vscode
 /coverage
