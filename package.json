@@ -12,8 +12,6 @@
     "watch-docs": "parcel docs-src/index.html --dist-dir docs/tmp --no-hmr",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "test": "jest",
-    "version-patch": "npm version patch",
-    "version-minor": "npm version minor",
     "precommit": "npm run build-docs && pretty-quick --staged"
   },
   "keywords": [

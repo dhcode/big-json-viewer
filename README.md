@@ -193,11 +193,7 @@ Fires when the user clicks on the Copy Path link of a node.
 
 ## Contributing
 
-Anyone is welcome to contribute.
-
-If something has changed that affects the Docs/Demo page, run:
-
-    npm run build-docs
+Anyone is welcome to contribute. See [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ### Future TODOs
 
