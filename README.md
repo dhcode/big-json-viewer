@@ -79,7 +79,12 @@ Example:
 {
   objectNodesLimit: 50, // how many properties of an object should be shows before it gets paginatated with a pagination size of 50
   arrayNodesLimit: 50, // same as objectNodesLimit, but with array elements
-  labelAsPath: false // if true the label for every node will show the full path to the element
+  labelAsPath: false, // if true the label for every node will show the full path to the element
+  linkLabelCopyPath: 'Copy path', // label for the copy path button in case of translation
+  linkLabelExpandAll: 'Expand all', // label for the expand  all button in case of translation
+  collapseSameValue: 5, // if an array repeats the same value for this amount of times they will be collapsed
+  showExtendedJson: false, // if true, extended JSON types like $date, $oid, $binary, etc. will be shown with their type
+  maxStringPreviewLength: 250, // maximum length of string preview before it gets truncated with "..."
 }
 ```
 
